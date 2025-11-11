@@ -1,0 +1,97 @@
+<resources>
+    <string name="app_name">Mox Memory Game</string>
+
+    <!-- OpeningMenuScreen -->
+    <string name="opening_menu_title">MOX MEMORY GAME</string>
+    <string name="opening_menu_top_ranking">TOP RANKING</string>
+    <string name="opening_menu_button_start_game">START NEW GAME</string>
+    <string name="opening_menu_button_settings">SETTINGS</string>
+    <string name="opening_menu_last_game_title">LAST GAME</string>
+
+    <!-- Common Formats -->
+    <string name="score_points_format">%1$d pts</string> <!-- Example: "123 pts" -->
+    <string name="rank_number_format">%1$d.</string> <!-- Example: "1." -->
+    <string name="version_format">Version %1$s</string>
+
+    <!-- PreferencesScreen -->
+    <string name="preferences_screen_title">PREFERENCES</string>
+    <string name="preferences_player_name_label">PLAYER\'S NAME [%1$d/%2$d]</string>
+    <string name="preferences_button_save_player_name">SAVE PLAYER NAME</string>
+    <string name="preferences_button_select_backgrounds">SELECT BACKGROUNDS
+(%1$d selected)</string>
+    <string name="preferences_board_dimensions_title">BOARD DIMENSIONS</string>
+    <string name="preferences_card_selection_title">CARD SELECTION:</string>
+    <string name="preferences_button_select_refined_cards">SELECT REFINED CARDS
+(%1$d/%2$d selected)</string>
+    <string name="preferences_button_select_simple_cards">SELECT SIMPLE CARDS
+(%1$d/%2$d selected)</string>
+    <string name="preferences_min_cards_required_info_part1">Minimum cards required in total</string>
+    <string name="preferences_min_cards_required_info_part2">(%1$d / %2$d)</string>
+    <string name="preferences_button_back_to_main_menu">BACK TO MAIN MENU</string>
+    <string name="preferences_board_width">Width: %1$d</string>
+    <string name="preferences_board_height">Height: %1$d</string>
+    <string name="preferences_board_current_size">Current Size: %1$dx%2$d</string>
+    <string name="preferences_music_settings_title">MUSIC SETTINGS</string>
+    <string name="preferences_music_enable_label">Enable Background Music</string>
+    <string name="preferences_music_volume_label">Volume: %1$d%%</string>
+    <string name="preferences_button_select_music_tracks">SELECT MUSIC TRACKS
+(%1$d selected)</string>
+    <string name="preferences_music_selection_dialog_title">Select Music Tracks</string>
+    <string name="preferences_music_selection_none">None (no music)</string>
+    <string name="preferences_music_preview_button_description">Play preview for %1$s</string>
+    <string name="preferences_sfx_settings_title">SOUND EFFECTS SETTINGS</string>
+    <string name="preferences_sfx_enable_label">Enable Sound Effects</string>
+    <string name="preferences_sfx_volume_label">Volume: %1$d%%</string>
+
+    <!-- Card Types -->
+    <string name="card_type_refined">Refined</string>
+    <string name="card_type_simple">Simple</string>
+
+    <!-- Dialogs -->
+    <string name="card_set_selection_dialog_title">Select %1$s Cards</string>
+    <string name="background_selection_dialog_title">Select Backgrounds</string>
+    <string name="image_preview_dialog_image_not_found">Image not found</string>
+    <string name="image_preview_dialog_content_description">Preview %1$s</string>
+    <string name="about_dialog_title">About Mox Memory Game</string>
+    <string name="about_dialog_content">This is a classic memory game where you have to find all the pairs of cards.\n\nDeveloped with and for Jetpack Compose, with my abilities for the skeleton and the game\'s working code, using the help of AI for free contents (Copilot for graphics, MusicGPT for music) and massively for refactoring and testing (Gemini who provided constant help and worked a lot), plus free sounds found on the web.</string>
+    <string name="copyright_notice">Copyright © %1$d %2$s. All rights reserved.</string>
+    <string name="license_notice">Released under the MIT License.</string>
+
+
+    <!-- Common Dialog/Button Strings -->
+    <string name="dialog_click_image_to_preview">(Click image to preview)</string>
+    <string name="dialog_select_deselect_all_count">Select/Deselect All (%1$d)</string>
+    <string name="dialog_select_deselect_all">Select/Deselect All</string>
+    <string name="dialog_item_thumbnail_description">Thumbnail %1$s</string>
+    <string name="button_cancel">CANCEL</string>
+    <string name="button_ok">OK</string>
+
+    <!-- GameApp specific strings -->
+    <string name="game_head_score">Score : %1$d</string>
+    <string name="game_head_moves">Moves: %1$d</string>
+    <string name="game_head_time">Time: %1$s</string>
+    <string name="game_tail_button_reset">RESET</string>
+    <string name="game_tail_button_pause">PAUSE</string>
+    <string name="game_dialog_pause_image_description">Pause symbol</string>
+    <string name="game_dialog_pause_exit_prompt">CLICK TO EXIT PAUSE</string>
+    <string name="game_dialog_reset_image_description">Reset symbol</string>
+    <string name="game_dialog_reset_title">RESET GAME</string>
+    <string name="game_dialog_reset_confirmation_prompt">ARE YOU SURE?</string>
+    <string name="game_dialog_won_title">CONGRATULATIONS!</string>
+    <string name="game_dialog_won_subtitle">YOU WON!</string>
+    <string name="game_dialog_won_score_info">Your Score: %1$d</string>
+    <string name="game_dialog_won_button_main_menu">GO TO MAIN MENU</string>
+    <string name="game_background_default_error_description">Default background due to error</string>
+    <string name="game_card_content_description_back">Card back</string>
+    <string name="game_card_content_description_face">Game card face</string>
+    <string name="preferences_scroll_down_indicator">Scroll
+Down</string>
+    <string name="game_loading_board">Loading game board...</string>
+    <string name="game_error_board_null">Error: Board not available. Please reset.</string>
+    <string name="game_dialog_finished_title">FINISHED!</string>
+    <string name="game_dialog_finished_subtitle">GAME ENDED</string>
+    <string name="game_error_images_not_loaded">Error: Card images not loaded for ShowTablePlay.</string>
+    <string name="card_name_refined">Refined %1$s</string>
+    <string name="card_name_simple">Simple %1$s</string>
+
+</resources>
