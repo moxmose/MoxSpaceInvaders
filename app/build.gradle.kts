@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.moxmemorygame"
+    namespace = "com.moxmose.moxspaceinvaders"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.moxmemorygame"
+        applicationId = "com.moxmose.moxspaceinvaders"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

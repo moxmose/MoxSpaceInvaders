@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Mox Memory Game"
+rootProject.name = "MoxSpaceInvaders"
 include(":app")
  

@@ -10,7 +10,7 @@
         <item name="windowSplashScreenAnimationDuration">200</item>
         -->
         <!-- Set the theme of the Activity that directly follows your splash screen. This is required. -->
-        <item name="postSplashScreenTheme">@style/Theme.MoxMemoryGame</item>
+        <item name="postSplashScreenTheme">@style/Theme.MoxSpaceInvaders</item>
     </style>
-    <style name="Theme.MoxMemoryGame" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.MoxSpaceInvaders" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
