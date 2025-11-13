@@ -43,19 +43,7 @@ val myAppModule = module {
         GameViewModel(
             navController = navController,
             timerViewModel = get(),
-            appSettingsDataStore = get(),
-            resourceNameToId = { resourceName ->
-                try {
-                    androidContext().resources.getIdentifier(
-                        resourceName,
-                        "drawable",
-                        androidContext().packageName
-                    )
-                } catch (e: Exception) {
-                    Log.e("KoinDI", "Resource ID not found for: $resourceName", e)
-                    0
-                }
-            }
+            appSettingsDataStore = get()
         )
     }
 
