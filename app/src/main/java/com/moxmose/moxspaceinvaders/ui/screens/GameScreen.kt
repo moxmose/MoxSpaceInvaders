@@ -2,6 +2,7 @@ package com.moxmose.moxspaceinvaders.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PestControl
 import androidx.compose.material.icons.filled.Refresh
@@ -37,8 +39,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.moxmose.moxspaceinvaders.R
 import com.moxmose.moxspaceinvaders.ui.GameEvent
+import com.moxmose.moxspaceinvaders.ui.GameStatus
 import com.moxmose.moxspaceinvaders.ui.GameViewModel
 import com.moxmose.moxspaceinvaders.ui.composables.BackgroundImg
 import com.moxmose.moxspaceinvaders.ui.formatDuration
@@ -51,11 +55,13 @@ fun GameScreen(
     gameViewModel: GameViewModel = koinViewModel(),
 ) {
     val score by gameViewModel.score
+    val lives by gameViewModel.lives
     val timeGame by gameViewModel.currentTime.collectAsState()
     val timeGameString = timeGame.formatDuration()
     val playerPositionX by gameViewModel.playerPositionX
     val projectiles by gameViewModel.projectiles
     val aliens by gameViewModel.aliens
+    val gameState by gameViewModel.gameState
 
     BoxWithConstraints(
         modifier = modifier
@@ -81,7 +87,6 @@ fun GameScreen(
 
         // --- DISEGNO DEGLI OGGETTI DI GIOCO ---
         
-        // Disegna i proiettili (già in pixel)
         Canvas(modifier = Modifier.fillMaxSize()) {
             projectiles.forEach { projectile ->
                 drawRect(
@@ -92,7 +97,6 @@ fun GameScreen(
             }
         }
 
-        // Disegna gli alieni (convertendo le loro posizioni da PX a DP)
         aliens.forEach { alien ->
             val xDp = with(density) { alien.position.x.toDp() }
             val yDp = with(density) { alien.position.y.toDp() }
@@ -113,6 +117,7 @@ fun GameScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             GameHeader(
                 score = score,
+                lives = lives,
                 time = timeGameString,
                 onPause = { gameViewModel.onGameEvent(GameEvent.Pause) },
                 onReset = { gameViewModel.onGameEvent(GameEvent.Reset) },
@@ -155,12 +160,20 @@ fun GameScreen(
                 .offset(x = playerPositionX.dp, y = (-100).dp)
                 .size(playerSizeDp)
         )
+        
+        if (gameState != GameStatus.Playing) {
+            val message = if (gameState == GameStatus.Victory) "YOU WIN!" else "GAME OVER"
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = message, fontSize = 48.sp, color = Color.Yellow)
+            }
+        }
     }
 }
 
 @Composable
 fun GameHeader(
     score: Int,
+    lives: Int,
     time: String,
     onPause: () -> Unit,
     onReset: () -> Unit,
@@ -170,29 +183,30 @@ fun GameHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         IconButton(onClick = onBack) {
             Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.preferences_button_back_to_main_menu))
         }
+        
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Favorite, contentDescription = "Lives", tint = Color.Red, modifier = Modifier.size(24.dp))
+            Text(
+                text = "x$lives",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
+
         Text(
             text = stringResource(R.string.game_head_score, score),
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = stringResource(R.string.game_head_time, time),
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center
         )
-        Row(modifier = Modifier.weight(0.5f)) {
-            IconButton(onClick = onPause) {
-                Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.game_tail_button_pause))
-            }
-            IconButton(onClick = onReset) {
-                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.game_tail_button_reset))
-            }
+
+        IconButton(onClick = onReset) {
+            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.game_tail_button_reset))
         }
     }
 }

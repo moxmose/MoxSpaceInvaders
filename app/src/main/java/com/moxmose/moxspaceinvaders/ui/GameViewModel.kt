@@ -13,10 +13,13 @@ import androidx.navigation.NavHostController
 import com.moxmose.moxspaceinvaders.data.local.IAppSettingsDataStore
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+
+enum class GameStatus { Playing, Victory, GameOver }
 
 // Stati degli oggetti di gioco
 data class AlienState(
@@ -35,20 +38,24 @@ class GameViewModel(
 ) : ViewModel() {
 
     // --- STATI DI GIOCO ---
+    val lives = mutableIntStateOf(3)
+    val score = mutableIntStateOf(0)
+    val gameState = mutableStateOf(GameStatus.Playing)
+    val currentTime = timerViewModel.elapsedSeconds
     val playerName: StateFlow<String> = appSettingsDataStore.playerName
     val selectedBackgrounds: StateFlow<Set<String>> = appSettingsDataStore.selectedBackgrounds
-    val score = mutableIntStateOf(0)
-    val currentTime = timerViewModel.elapsedSeconds
 
     // --- STATI DEGLI OGGETTI DI GIOCO ---
-    val playerPositionX = mutableFloatStateOf(0f) // Offset orizzontale dal centro in DP
+    val playerPositionX = mutableFloatStateOf(0f)
     val projectiles = mutableStateOf<List<ProjectileState>>(emptyList())
     val aliens = mutableStateOf<List<AlienState>>(emptyList())
 
     private val playerSpeed = 15f // in DP
     private val projectileSpeed = 20f // in PX
-    private var alienDirection = 1f // 1f for right, -1f for left
+    private var alienDirection = 1f
     private val alienSpeed = 2f
+    private var gameLoopJob: Job? = null
+    private var isReady = false
 
     private var screenWidthPx = 0f
     private var screenHeightPx = 0f
@@ -62,20 +69,29 @@ class GameViewModel(
         screenWidthPx = widthPx
         screenHeightPx = heightPx
         playerMovementBoundsDp = boundsDp
+        if (!isReady) {
+            isReady = true
+            gameLoopJob = gameLoop()
+        }
     }
 
     private fun startGame() {
+        gameLoopJob?.cancel()
+        isReady = false
         viewModelScope.launch {
+            lives.intValue = 3
             score.intValue = 0
-            playerPositionX.floatValue = 0f
-            projectiles.value = emptyList()
-            initializeAliens()
-
+            resetLevel()
             timerViewModel.resetTimer()
             timerViewModel.startTimer()
-
-            gameLoop()
         }
+    }
+
+    private fun resetLevel() {
+        playerPositionX.floatValue = 0f
+        projectiles.value = emptyList()
+        gameState.value = GameStatus.Playing
+        initializeAliens()
     }
 
     private fun initializeAliens() {
@@ -100,37 +116,62 @@ class GameViewModel(
         aliens.value = newAliens
     }
 
-    private fun gameLoop() {
-        viewModelScope.launch(ioDispatcher) {
-            while (isActive) {
-                // --- AGGIORNAMENTO PROIETTILI ---
-                projectiles.value = projectiles.value.map {
-                    it.copy(position = it.position.copy(y = it.position.y - projectileSpeed))
-                }.filter { it.position.y > 0 }
-
-                // --- AGGIORNAMENTO ALIENI ---
-                var boundaryReached = false
-                var nextAliens = aliens.value.map { alien ->
-                    val newX = alien.position.x + (alienSpeed * alienDirection)
-                    if (newX < 0 || newX + alien.size.width > screenWidthPx) {
-                        boundaryReached = true
-                    }
-                    alien.copy(position = alien.position.copy(x = newX))
-                }
-
-                if (boundaryReached) {
-                    alienDirection *= -1 // Inverti direzione
-                    nextAliens = nextAliens.map { alien ->
-                        alien.copy(position = alien.position.copy(y = alien.position.y + 40f))
-                    }
-                }
-                aliens.value = nextAliens
-                
-                // --- CONTROLLO COLLISIONI ---
-                checkCollisions()
-
-                delayProvider(16)
+    private fun gameLoop() = viewModelScope.launch(ioDispatcher) {
+        while (isActive && gameState.value == GameStatus.Playing) {
+            if (!isReady) {
+                delayProvider(100)
+                continue
             }
+            delayProvider(16)
+            
+            projectiles.value = projectiles.value.map {
+                it.copy(position = it.position.copy(y = it.position.y - projectileSpeed))
+            }.filter { it.position.y > 0 }
+
+            var boundaryReached = false
+            var nextAliens = aliens.value.map { alien ->
+                val newX = alien.position.x + (alienSpeed * alienDirection)
+                if (screenWidthPx > 0 && (newX < 0 || newX + alien.size.width > screenWidthPx)) {
+                    boundaryReached = true
+                }
+                alien.copy(position = alien.position.copy(x = newX))
+            }
+
+            if (boundaryReached) {
+                alienDirection *= -1
+                nextAliens = nextAliens.map { alien ->
+                    alien.copy(position = alien.position.copy(y = alien.position.y + 40f))
+                }
+            }
+            aliens.value = nextAliens
+            
+            checkCollisions()
+            checkGameStatus()
+        }
+    }
+
+    private fun checkGameStatus() {
+        if (aliens.value.isEmpty() && gameState.value == GameStatus.Playing) {
+            endGame(GameStatus.Victory)
+        }
+    }
+
+    private fun endGame(status: GameStatus) {
+        if (gameState.value == GameStatus.Playing) {
+            gameState.value = status
+            timerViewModel.stopTimer()
+            viewModelScope.launch {
+                appSettingsDataStore.saveScore(playerName.value, score.value)
+            }
+        }
+    }
+
+    private fun handlePlayerHit() {
+        lives.intValue--
+        if (lives.intValue <= 0) {
+            endGame(GameStatus.GameOver)
+        } else {
+            resetLevel()
         }
     }
 
@@ -138,18 +179,38 @@ class GameViewModel(
         val projectilesToRemove = mutableSetOf<ProjectileState>()
         val aliensToRemove = mutableSetOf<AlienState>()
 
+        val playerWidthPx = 120f
+        val playerHeightPx = 120f
+        val playerOffsetYPx = 250f
+
+        val playerOffsetXPx = screenWidthPx * (playerPositionX.floatValue / (playerMovementBoundsDp * 2))
+        val playerRect = Rect(
+            left = (screenWidthPx / 2) + playerOffsetXPx - (playerWidthPx / 2),
+            top = screenHeightPx - playerOffsetYPx - playerHeightPx,
+            right = (screenWidthPx / 2) + playerOffsetXPx + (playerWidthPx / 2),
+            bottom = screenHeightPx - playerOffsetYPx
+        )
+
         projectiles.value.forEach { projectile ->
             val projectileRect = Rect(projectile.position, projectile.size)
-
             aliens.value.forEach { alien ->
                 val alienRect = Rect(alien.position, alien.size)
-
                 if (projectileRect.overlaps(alienRect)) {
                     projectilesToRemove.add(projectile)
                     aliensToRemove.add(alien)
                     score.intValue += 10
                 }
             }
+        }
+
+        val alienCollidingWithPlayer = aliens.value.find { alien ->
+            val alienRect = Rect(alien.position, alien.size)
+            alienRect.overlaps(playerRect)
+        }
+
+        if (alienCollidingWithPlayer != null) {
+            handlePlayerHit()
+            return // Esce per processare il reset del livello
         }
 
         if (projectilesToRemove.isNotEmpty() || aliensToRemove.isNotEmpty()) {
@@ -159,6 +220,8 @@ class GameViewModel(
     }
 
     fun onGameEvent(event: GameEvent) {
+        if (gameState.value != GameStatus.Playing && event !is GameEvent.Reset && event !is GameEvent.BackToMenu) return
+
         when (event) {
             is GameEvent.MovePlayer -> {
                 val newPosition = playerPositionX.floatValue + (event.direction * playerSpeed)
@@ -178,6 +241,7 @@ class GameViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        gameLoopJob?.cancel()
         viewModelScope.launch {
             timerViewModel.stopAndAwaitTimerCompletion()
         }
