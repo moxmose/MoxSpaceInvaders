@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PestControl
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Star
@@ -31,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -54,6 +55,7 @@ fun GameScreen(
     val timeGameString = timeGame.formatDuration()
     val playerPositionX by gameViewModel.playerPositionX
     val projectiles by gameViewModel.projectiles
+    val aliens by gameViewModel.aliens
 
     BoxWithConstraints(
         modifier = modifier
@@ -61,14 +63,14 @@ fun GameScreen(
             .padding(innerPadding),
     ) {
         val screenWidthDp = maxWidth
-        val screenHeightDp = maxHeight
         val playerSizeDp = 48.dp
         val playerMovementBoundsDp = (screenWidthDp / 2) - (playerSizeDp / 2)
 
-        val screenWidthPx = with(LocalDensity.current) { screenWidthDp.toPx() }
-        val screenHeightPx = with(LocalDensity.current) { screenHeightDp.toPx() }
+        val density = LocalDensity.current
+        val screenWidthPx = with(density) { screenWidthDp.toPx() }
+        val screenHeightPx = with(density) { maxHeight.toPx() }
 
-        LaunchedEffect(screenWidthPx, screenHeightPx) {
+        LaunchedEffect(Unit) {
             gameViewModel.updateScreenDimensions(screenWidthPx, screenHeightPx, playerMovementBoundsDp.value)
         }
 
@@ -76,7 +78,10 @@ fun GameScreen(
             selectedBackgrounds = gameViewModel.selectedBackgrounds,
             modifier = Modifier.fillMaxSize()
         )
+
+        // --- DISEGNO DEGLI OGGETTI DI GIOCO ---
         
+        // Disegna i proiettili (già in pixel)
         Canvas(modifier = Modifier.fillMaxSize()) {
             projectiles.forEach { projectile ->
                 drawRect(
@@ -87,6 +92,24 @@ fun GameScreen(
             }
         }
 
+        // Disegna gli alieni (convertendo le loro posizioni da PX a DP)
+        aliens.forEach { alien ->
+            val xDp = with(density) { alien.position.x.toDp() }
+            val yDp = with(density) { alien.position.y.toDp() }
+            val sizeDp = with(density) { alien.size.width.toDp() }
+
+            Icon(
+                imageVector = Icons.Default.PestControl,
+                contentDescription = "Alien",
+                tint = alien.color,
+                modifier = Modifier
+                    .offset(x = xDp, y = yDp)
+                    .size(sizeDp)
+            )
+        }
+        
+        // --- UI E CONTROLLI ---
+
         Column(modifier = Modifier.fillMaxSize()) {
             GameHeader(
                 score = score,
@@ -96,10 +119,8 @@ fun GameScreen(
                 onBack = { gameViewModel.onGameEvent(GameEvent.BackToMenu) }
             )
 
-            // --- AREA DI GIOCO ---
             Spacer(modifier = Modifier.weight(1f))
 
-            // --- CONTROLLI DEL GIOCATORE ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -110,7 +131,13 @@ fun GameScreen(
                 IconButton(onClick = { gameViewModel.onGameEvent(GameEvent.MovePlayer(-1f)) }) {
                     Icon(Icons.Default.ArrowLeft, contentDescription = "Move Left", tint = Color.White, modifier = Modifier.size(48.dp))
                 }
-                IconButton(onClick = { gameViewModel.onGameEvent(GameEvent.PlayerShoot) }) {
+                IconButton(onClick = {
+                    val playerOffsetXpx = with(density) { playerPositionX.dp.toPx() }
+                    val projectileStartX = (screenWidthPx / 2) + playerOffsetXpx - 5f
+                    val projectileStartY = screenHeightPx - with(density) { 150.dp.toPx() }
+                    
+                    gameViewModel.onGameEvent(GameEvent.PlayerShoot(Offset(projectileStartX, projectileStartY)))
+                }) {
                     Icon(Icons.Default.Star, contentDescription = "Shoot", tint = Color.Yellow, modifier = Modifier.size(64.dp))
                 }
                 IconButton(onClick = { gameViewModel.onGameEvent(GameEvent.MovePlayer(1f)) }) {
@@ -119,7 +146,6 @@ fun GameScreen(
             }
         }
 
-        // --- PLAYER ---
         Icon(
             imageVector = Icons.Default.RocketLaunch,
             contentDescription = "Player Ship",
