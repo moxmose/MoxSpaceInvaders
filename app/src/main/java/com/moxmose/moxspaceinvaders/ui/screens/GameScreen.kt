@@ -60,6 +60,7 @@ fun GameScreen(
     val timeGameString = timeGame.formatDuration()
     val playerPositionX by gameViewModel.playerPositionX
     val projectiles by gameViewModel.projectiles
+    val alienProjectiles by gameViewModel.alienProjectiles
     val aliens by gameViewModel.aliens
     val gameState by gameViewModel.gameState
 
@@ -89,6 +90,13 @@ fun GameScreen(
         
         Canvas(modifier = Modifier.fillMaxSize()) {
             projectiles.forEach { projectile ->
+                drawRect(
+                    color = projectile.color,
+                    topLeft = projectile.position,
+                    size = projectile.size
+                )
+            }
+            alienProjectiles.forEach { projectile ->
                 drawRect(
                     color = projectile.color,
                     topLeft = projectile.position,

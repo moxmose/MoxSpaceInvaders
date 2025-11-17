@@ -18,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 enum class GameStatus { Playing, Victory, GameOver }
 
@@ -46,14 +47,17 @@ class GameViewModel(
     val selectedBackgrounds: StateFlow<Set<String>> = appSettingsDataStore.selectedBackgrounds
 
     // --- STATI DEGLI OGGETTI DI GIOCO ---
-    val playerPositionX = mutableFloatStateOf(0f)
+    val playerPositionX = mutableFloatStateOf(0f) // Offset orizzontale dal centro in DP
     val projectiles = mutableStateOf<List<ProjectileState>>(emptyList())
+    val alienProjectiles = mutableStateOf<List<ProjectileState>>(emptyList())
     val aliens = mutableStateOf<List<AlienState>>(emptyList())
 
     private val playerSpeed = 15f // in DP
     private val projectileSpeed = 20f // in PX
+    private val alienProjectileSpeed = 10f // in PX
     private var alienDirection = 1f
     private val alienSpeed = 2f
+    private val alienShootProbability = 4 // Percentuale (0-100)
     private var gameLoopJob: Job? = null
     private var isReady = false
 
@@ -90,6 +94,7 @@ class GameViewModel(
     private fun resetLevel() {
         playerPositionX.floatValue = 0f
         projectiles.value = emptyList()
+        alienProjectiles.value = emptyList()
         gameState.value = GameStatus.Playing
         initializeAliens()
     }
@@ -124,29 +129,56 @@ class GameViewModel(
             }
             delayProvider(16)
             
-            projectiles.value = projectiles.value.map {
-                it.copy(position = it.position.copy(y = it.position.y - projectileSpeed))
-            }.filter { it.position.y > 0 }
+            // Aggiorna proiettili (giocatore e alieni)
+            updateProjectiles()
 
-            var boundaryReached = false
-            var nextAliens = aliens.value.map { alien ->
-                val newX = alien.position.x + (alienSpeed * alienDirection)
-                if (screenWidthPx > 0 && (newX < 0 || newX + alien.size.width > screenWidthPx)) {
-                    boundaryReached = true
-                }
-                alien.copy(position = alien.position.copy(x = newX))
-            }
+            // Muovi gli alieni
+            moveAliens()
 
-            if (boundaryReached) {
-                alienDirection *= -1
-                nextAliens = nextAliens.map { alien ->
-                    alien.copy(position = alien.position.copy(y = alien.position.y + 40f))
-                }
-            }
-            aliens.value = nextAliens
+            // Gestisci lo sparo alieno
+            handleAlienShooting()
             
+            // Controlla collisioni e stato del gioco
             checkCollisions()
             checkGameStatus()
+        }
+    }
+
+    private fun updateProjectiles() {
+        projectiles.value = projectiles.value.map {
+            it.copy(position = it.position.copy(y = it.position.y - projectileSpeed))
+        }.filter { it.position.y > 0 }
+
+        alienProjectiles.value = alienProjectiles.value.map {
+            it.copy(position = it.position.copy(y = it.position.y + alienProjectileSpeed))
+        }.filter { it.position.y < screenHeightPx }
+    }
+
+    private fun moveAliens() {
+        var boundaryReached = false
+        var nextAliens = aliens.value.map { alien ->
+            val newX = alien.position.x + (alienSpeed * alienDirection)
+            if (screenWidthPx > 0 && (newX < 0 || newX + alien.size.width > screenWidthPx)) {
+                boundaryReached = true
+            }
+            alien.copy(position = alien.position.copy(x = newX))
+        }
+
+        if (boundaryReached) {
+            alienDirection *= -1
+            nextAliens = nextAliens.map { alien ->
+                alien.copy(position = alien.position.copy(y = alien.position.y + 40f))
+            }
+        }
+        aliens.value = nextAliens
+    }
+
+    private fun handleAlienShooting() {
+        if (aliens.value.isNotEmpty() && Random.nextInt(0, 100) < alienShootProbability) {
+            val randomAlien = aliens.value.random()
+            val projectileStartPos = Offset(randomAlien.position.x + randomAlien.size.width / 2, randomAlien.position.y + randomAlien.size.height)
+            val newProjectile = ProjectileState(position = projectileStartPos, color = Color.Red, size = Size(10f, 30f))
+            alienProjectiles.value = alienProjectiles.value + newProjectile
         }
     }
 
@@ -166,7 +198,7 @@ class GameViewModel(
         }
     }
 
-    private fun handlePlayerHit() {
+    private fun handlePlayerGraveHit() {
         lives.intValue--
         if (lives.intValue <= 0) {
             endGame(GameStatus.GameOver)
@@ -175,11 +207,19 @@ class GameViewModel(
         }
     }
 
+    private fun handlePlayerLightHit() {
+        lives.intValue--
+        if (lives.intValue <= 0) {
+            endGame(GameStatus.GameOver)
+        }
+    }
+
     private fun checkCollisions() {
-        val projectilesToRemove = mutableSetOf<ProjectileState>()
+        val playerProjectilesToRemove = mutableSetOf<ProjectileState>()
+        val alienProjectilesToRemove = mutableSetOf<ProjectileState>()
         val aliensToRemove = mutableSetOf<AlienState>()
 
-        val playerWidthPx = 120f
+        val playerWidthPx = 120f 
         val playerHeightPx = 120f
         val playerOffsetYPx = 250f
 
@@ -191,31 +231,44 @@ class GameViewModel(
             bottom = screenHeightPx - playerOffsetYPx
         )
 
+        // Collisione Proiettili Giocatore vs Alieni
         projectiles.value.forEach { projectile ->
             val projectileRect = Rect(projectile.position, projectile.size)
             aliens.value.forEach { alien ->
                 val alienRect = Rect(alien.position, alien.size)
                 if (projectileRect.overlaps(alienRect)) {
-                    projectilesToRemove.add(projectile)
+                    playerProjectilesToRemove.add(projectile)
                     aliensToRemove.add(alien)
                     score.intValue += 10
                 }
             }
         }
 
+        // Collisione Proiettili Alieni vs Giocatore
+        alienProjectiles.value.forEach { projectile ->
+            val projectileRect = Rect(projectile.position, projectile.size)
+            if (projectileRect.overlaps(playerRect)) {
+                alienProjectilesToRemove.add(projectile)
+                handlePlayerLightHit()
+            }
+        }
+
+        // Collisione Alieni vs Giocatore (Morte Grave)
         val alienCollidingWithPlayer = aliens.value.find { alien ->
             val alienRect = Rect(alien.position, alien.size)
             alienRect.overlaps(playerRect)
         }
 
         if (alienCollidingWithPlayer != null) {
-            handlePlayerHit()
+            handlePlayerGraveHit()
             return // Esce per processare il reset del livello
         }
 
-        if (projectilesToRemove.isNotEmpty() || aliensToRemove.isNotEmpty()) {
-            projectiles.value = projectiles.value - projectilesToRemove
+        // Rimuovi gli oggetti colpiti
+        if (playerProjectilesToRemove.isNotEmpty() || aliensToRemove.isNotEmpty() || alienProjectilesToRemove.isNotEmpty()) {
+            projectiles.value = projectiles.value - playerProjectilesToRemove
             aliens.value = aliens.value - aliensToRemove
+            alienProjectiles.value = alienProjectiles.value - alienProjectilesToRemove
         }
     }
 
