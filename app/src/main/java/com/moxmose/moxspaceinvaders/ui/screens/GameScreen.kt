@@ -1,6 +1,7 @@
 package com.moxmose.moxspaceinvaders.ui.screens
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -71,14 +73,17 @@ fun GameScreen(
     ) {
         val screenWidthDp = maxWidth
         val playerSizeDp = 48.dp
+        val playerOffsetYdp = 100.dp
         val playerMovementBoundsDp = (screenWidthDp / 2) - (playerSizeDp / 2)
 
         val density = LocalDensity.current
         val screenWidthPx = with(density) { screenWidthDp.toPx() }
         val screenHeightPx = with(density) { maxHeight.toPx() }
+        val playerSizePx = with(density) { playerSizeDp.toPx() }
+        val playerOffsetYPx = with(density) { playerOffsetYdp.toPx() }
 
         LaunchedEffect(Unit) {
-            gameViewModel.updateScreenDimensions(screenWidthPx, screenHeightPx, playerMovementBoundsDp.value)
+            gameViewModel.updateScreenDimensions(screenWidthPx, screenHeightPx, playerMovementBoundsDp.value, playerSizePx, playerOffsetYPx)
         }
 
         BackgroundImg(
@@ -86,8 +91,6 @@ fun GameScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // --- DISEGNO DEGLI OGGETTI DI GIOCO ---
-        
         Canvas(modifier = Modifier.fillMaxSize()) {
             projectiles.forEach { projectile ->
                 drawRect(
@@ -119,8 +122,6 @@ fun GameScreen(
                     .size(sizeDp)
             )
         }
-        
-        // --- UI E CONTROLLI ---
 
         Column(modifier = Modifier.fillMaxSize()) {
             GameHeader(
@@ -141,9 +142,24 @@ fun GameScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { gameViewModel.onGameEvent(GameEvent.MovePlayer(-1f)) }) {
-                    Icon(Icons.Default.ArrowLeft, contentDescription = "Move Left", tint = Color.White, modifier = Modifier.size(48.dp))
-                }
+                // --- Pulsante Sinistra ---
+                Icon(
+                    imageVector = Icons.Default.ArrowLeft, 
+                    contentDescription = "Move Left", 
+                    tint = Color.White, 
+                    modifier = Modifier
+                        .size(48.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = { 
+                                    gameViewModel.onGameEvent(GameEvent.UpdateMovement(-1f))
+                                    tryAwaitRelease()
+                                    gameViewModel.onGameEvent(GameEvent.UpdateMovement(0f))
+                                }
+                            )
+                        }
+                )
+
                 IconButton(onClick = {
                     val playerOffsetXpx = with(density) { playerPositionX.dp.toPx() }
                     val projectileStartX = (screenWidthPx / 2) + playerOffsetXpx - 5f
@@ -153,9 +169,24 @@ fun GameScreen(
                 }) {
                     Icon(Icons.Default.Star, contentDescription = "Shoot", tint = Color.Yellow, modifier = Modifier.size(64.dp))
                 }
-                IconButton(onClick = { gameViewModel.onGameEvent(GameEvent.MovePlayer(1f)) }) {
-                    Icon(Icons.Default.ArrowRight, contentDescription = "Move Right", tint = Color.White, modifier = Modifier.size(48.dp))
-                }
+
+                // --- Pulsante Destra ---
+                Icon(
+                    imageVector = Icons.Default.ArrowRight, 
+                    contentDescription = "Move Right", 
+                    tint = Color.White, 
+                    modifier = Modifier
+                        .size(48.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = { 
+                                    gameViewModel.onGameEvent(GameEvent.UpdateMovement(1f))
+                                    tryAwaitRelease()
+                                    gameViewModel.onGameEvent(GameEvent.UpdateMovement(0f))
+                                }
+                            )
+                        }
+                )
             }
         }
 
@@ -165,7 +196,7 @@ fun GameScreen(
             tint = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(x = playerPositionX.dp, y = (-100).dp)
+                .offset(x = playerPositionX.dp, y = -playerOffsetYdp)
                 .size(playerSizeDp)
         )
         
