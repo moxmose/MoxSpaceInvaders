@@ -1,5 +1,6 @@
 package com.moxmose.moxspaceinvaders.ui
 
+import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,14 +59,14 @@ class GameViewModel(
     val aliens = mutableStateOf<List<AlienState>>(emptyList())
     val motherShip = mutableStateOf<MotherShipState?>(null)
 
-    private val playerSpeed = 3f // Velocità in DP per frame
+    private val playerSpeed = 15f 
     private val projectileSpeed = 20f
     private val alienProjectileSpeed = 10f
     private var alienDirection = 1f
     private val baseAlienSpeed = 2f
     private var initialAlienCount = 0
     private val alienShootProbability = 4
-    private val motherShipSpawnProbability = 1
+    private val motherShipSpawnProbability = 200
     private var gameLoopJob: Job? = null
     private var isReady = false
     
@@ -88,25 +89,24 @@ class GameViewModel(
         playerMovementBoundsDp = boundsDp
         playerSizePx = pSizePx
         playerOffsetYPx = pOffsetYpx
-        if (!isReady) {
-            isReady = true
-            gameLoopJob = gameLoop()
-        }
+        Log.d("GameViewModel", "Screen dimensions updated: screenWidthPx = $screenWidthPx")
+        isReady = true
     }
 
     private fun startGame() {
         gameLoopJob?.cancel()
-        isReady = false
         viewModelScope.launch {
             lives.intValue = 3
             score.intValue = 0
             resetLevel()
             timerViewModel.resetTimer()
             timerViewModel.startTimer()
+            gameLoopJob = gameLoop()
         }
     }
 
     private fun resetLevel() {
+        // isReady = false // RIMOSSA LA RIGA CHE CAUSAVA IL BUG DEL RESET
         playerPositionX.floatValue = 0f
         movementInput.floatValue = 0f
         projectiles.value = emptyList()
@@ -140,12 +140,12 @@ class GameViewModel(
     }
 
     private fun gameLoop() = viewModelScope.launch(ioDispatcher) {
+        while (!isReady) {
+            delay(100) 
+        }
+
         while (isActive && gameState.value == GameStatus.Playing) {
-            if (!isReady) {
-                delayProvider(100) 
-                continue
-            }
-            delayProvider(16)
+            delay(16)
             
             movePlayer()
             updateProjectiles()
@@ -175,6 +175,7 @@ class GameViewModel(
     }
 
     private fun moveAliens() {
+        if (aliens.value.isEmpty()) return
         val aliensDestroyed = initialAlienCount - aliens.value.size
         val speedMultiplier = 1 + (aliensDestroyed.toFloat() / initialAlienCount.toFloat()) * 2
         val currentAlienSpeed = baseAlienSpeed * speedMultiplier
@@ -207,14 +208,19 @@ class GameViewModel(
     }
 
     private fun handleMotherShipLogic() {
+        if (screenWidthPx == 0f) return
+
         if (motherShip.value == null) {
-            if (Random.nextInt(0, 1000) < motherShipSpawnProbability) {
+            val randomValue = Random.nextInt(0, 1000)
+            if (randomValue < motherShipSpawnProbability) {
+                Log.d("MotherShip", "Spawning MotherShip! Rolled $randomValue")
                 motherShip.value = MotherShipState(position = Offset(-150f, 80f))
             }
         } else {
             val newPosition = motherShip.value!!.position.x + motherShip.value!!.speed
             if (newPosition > screenWidthPx) {
-                motherShip.value = null 
+                Log.d("MotherShip", "Despawning MotherShip off-screen.")
+                motherShip.value = null
             } else {
                 motherShip.value = motherShip.value!!.copy(position = Offset(newPosition, motherShip.value!!.position.y))
             }
@@ -247,17 +253,18 @@ class GameViewModel(
 
             motherShip.value?.let {
                 val motherShipRect = Rect(it.position, it.size)
-                if(projectileRect.overlaps(motherShipRect)) {
+                if (projectileRect.overlaps(motherShipRect)) {
                     playerProjectilesToRemove.add(projectile)
                     motherShip.value = null
                     score.intValue += 100
                 }
             }
         }
-        
+
         alienProjectiles.value.forEach { projectile ->
             val projectileRect = Rect(projectile.position, projectile.size)
             if (projectileRect.overlaps(playerRect)) {
+                Log.d("Collision", "Player Rect: $playerRect, Projectile Rect: $projectileRect")
                 alienProjectilesToRemove.add(projectile)
                 handlePlayerLightHit()
             }
@@ -270,7 +277,7 @@ class GameViewModel(
 
         if (alienCollidingWithPlayer != null) {
             handlePlayerGraveHit()
-            return 
+            return
         }
 
         if (playerProjectilesToRemove.isNotEmpty() || aliensToRemove.isNotEmpty() || alienProjectilesToRemove.isNotEmpty()) {

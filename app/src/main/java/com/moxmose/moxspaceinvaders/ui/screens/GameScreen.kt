@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
@@ -64,6 +65,7 @@ fun GameScreen(
     val projectiles by gameViewModel.projectiles
     val alienProjectiles by gameViewModel.alienProjectiles
     val aliens by gameViewModel.aliens
+    val motherShip by gameViewModel.motherShip
     val gameState by gameViewModel.gameState
 
     BoxWithConstraints(
@@ -91,6 +93,8 @@ fun GameScreen(
             modifier = Modifier.fillMaxSize()
         )
 
+        // --- DISEGNO DEGLI OGGETTI DI GIOCO ---
+        
         Canvas(modifier = Modifier.fillMaxSize()) {
             projectiles.forEach { projectile ->
                 drawRect(
@@ -122,6 +126,24 @@ fun GameScreen(
                     .size(sizeDp)
             )
         }
+
+        motherShip?.let {
+            val xDp = with(density) { it.position.x.toDp() }
+            val yDp = with(density) { it.position.y.toDp() }
+            val sizeWidthDp = with(density) { it.size.width.toDp() }
+            val sizeHeightDp = with(density) { it.size.height.toDp() }
+
+            Icon(
+                imageVector = Icons.Default.AirplanemodeActive,
+                contentDescription = "Mother Ship",
+                tint = Color.Magenta,
+                modifier = Modifier
+                    .offset(x = xDp, y = yDp)
+                    .size(sizeWidthDp, sizeHeightDp)
+            )
+        }
+        
+        // --- UI E CONTROLLI ---
 
         Column(modifier = Modifier.fillMaxSize()) {
             GameHeader(
