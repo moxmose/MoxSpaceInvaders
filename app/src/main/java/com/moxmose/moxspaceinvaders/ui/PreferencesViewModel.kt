@@ -20,7 +20,7 @@ class PreferencesViewModel(
 ) : ViewModel() {
 
     val playerName: StateFlow<String> = appSettingsDataStore.playerName
-    val availableBackgrounds: List<String> = List(7) { i -> "background_%02d".format(i) }
+    val availableBackgrounds: List<String> = List(8) { i -> "background_%02d".format(i) }
 
     private val _selectedBackgrounds = MutableStateFlow<Set<String>>(emptySet())
     val selectedBackgrounds: StateFlow<Set<String>> = _selectedBackgrounds.asStateFlow()

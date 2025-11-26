@@ -1,6 +1,7 @@
 package com.moxmose.moxspaceinvaders.ui.screens
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +24,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PestControl
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,9 +36,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -117,14 +120,20 @@ fun GameScreen(
             val yDp = with(density) { alien.position.y.toDp() }
             val sizeDp = with(density) { alien.size.width.toDp() }
 
-            Icon(
-                imageVector = Icons.Default.PestControl,
-                contentDescription = "Alien",
-                tint = alien.color,
-                modifier = Modifier
-                    .offset(x = xDp, y = yDp)
-                    .size(sizeDp)
-            )
+            Box(modifier = Modifier.offset(x = xDp, y = yDp).size(sizeDp)) {
+                Image(
+                    painter = painterResource(id = R.mipmap.astro_al_1),
+                    contentDescription = "Alien",
+                    modifier = Modifier.fillMaxSize()
+                )
+                Image(
+                    painter = painterResource(id = R.mipmap.astro_al_1),
+                    contentDescription = "Alien Color Overlay",
+                    colorFilter = ColorFilter.tint(alien.color.copy(alpha = 0.03f), blendMode = BlendMode.SrcAtop),
+                    modifier = Modifier.fillMaxSize()
+                )
+
+            }
         }
 
         motherShip?.let {
@@ -133,10 +142,9 @@ fun GameScreen(
             val sizeWidthDp = with(density) { it.size.width.toDp() }
             val sizeHeightDp = with(density) { it.size.height.toDp() }
 
-            Icon(
-                imageVector = Icons.Default.AirplanemodeActive,
+            Image(
+                painter = painterResource(id = R.mipmap.astro_mo_1),
                 contentDescription = "Mother Ship",
-                tint = Color.Magenta,
                 modifier = Modifier
                     .offset(x = xDp, y = yDp)
                     .size(sizeWidthDp, sizeHeightDp)
@@ -212,10 +220,9 @@ fun GameScreen(
             }
         }
 
-        Icon(
-            imageVector = Icons.Default.RocketLaunch,
+        Image(
+            painter = painterResource(id = R.mipmap.astro_pl_1),
             contentDescription = "Player Ship",
-            tint = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .offset(x = playerPositionX.dp, y = -playerOffsetYdp)

@@ -23,6 +23,7 @@ import kotlin.random.Random
 
 enum class GameStatus { Playing, Victory, GameOver }
 
+// Stati degli oggetti di gioco
 data class AlienState(
     val position: Offset,
     val size: Size = Size(80f, 80f),
@@ -106,7 +107,7 @@ class GameViewModel(
     }
 
     private fun resetLevel() {
-        // isReady = false // RIMOSSA LA RIGA CHE CAUSAVA IL BUG DEL RESET
+        // isReady = false // CAUSAVA IL BUG DEL RESET
         playerPositionX.floatValue = 0f
         movementInput.floatValue = 0f
         projectiles.value = emptyList()
