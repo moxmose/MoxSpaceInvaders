@@ -23,7 +23,6 @@ import kotlin.random.Random
 
 enum class GameStatus { Playing, Victory, GameOver }
 
-// Stati degli oggetti di gioco
 data class AlienState(
     val position: Offset,
     val size: Size = Size(80f, 80f),
@@ -51,6 +50,7 @@ class GameViewModel(
     val currentTime = timerViewModel.elapsedSeconds
     val playerName: StateFlow<String> = appSettingsDataStore.playerName
     val selectedBackgrounds: StateFlow<Set<String>> = appSettingsDataStore.selectedBackgrounds
+    val isPlayerInvincible = mutableStateOf(false)
 
     // --- STATI DEGLI OGGETTI DI GIOCO ---
     val playerPositionX = mutableFloatStateOf(0f)
@@ -73,6 +73,7 @@ class GameViewModel(
     
     private var lastShotTime = 0L
     private val shotCooldown = 500L
+    private val invincibilityDuration = 2500L
 
     private var screenWidthPx = 0f
     private var screenHeightPx = 0f
@@ -85,6 +86,7 @@ class GameViewModel(
     }
 
     fun updateScreenDimensions(widthPx: Float, heightPx: Float, boundsDp: Float, pSizePx: Float, pOffsetYpx: Float) {
+        if (isReady) return
         screenWidthPx = widthPx
         screenHeightPx = heightPx
         playerMovementBoundsDp = boundsDp
@@ -99,21 +101,22 @@ class GameViewModel(
         viewModelScope.launch {
             lives.intValue = 3
             score.intValue = 0
-            resetLevel()
+            resetLevel(true)
             timerViewModel.resetTimer()
             timerViewModel.startTimer()
             gameLoopJob = gameLoop()
         }
     }
 
-    private fun resetLevel() {
-        // isReady = false // CAUSAVA IL BUG DEL RESET
+    private fun resetLevel(isNewGame: Boolean = false) {
+        if(!isNewGame) isReady = false
         playerPositionX.floatValue = 0f
         movementInput.floatValue = 0f
         projectiles.value = emptyList()
         alienProjectiles.value = emptyList()
         motherShip.value = null
         gameState.value = GameStatus.Playing
+        isPlayerInvincible.value = false
         initializeAliens()
     }
 
@@ -228,7 +231,17 @@ class GameViewModel(
         }
     }
 
+    private fun triggerInvincibility() {
+        viewModelScope.launch {
+            isPlayerInvincible.value = true
+            delay(invincibilityDuration)
+            isPlayerInvincible.value = false
+        }
+    }
+
     private fun checkCollisions() {
+        if (isPlayerInvincible.value) return // Salta tutti i controlli di collisione del giocatore
+
         val playerProjectilesToRemove = mutableSetOf<ProjectileState>()
         val alienProjectilesToRemove = mutableSetOf<ProjectileState>()
         val aliensToRemove = mutableSetOf<AlienState>()
@@ -265,7 +278,6 @@ class GameViewModel(
         alienProjectiles.value.forEach { projectile ->
             val projectileRect = Rect(projectile.position, projectile.size)
             if (projectileRect.overlaps(playerRect)) {
-                Log.d("Collision", "Player Rect: $playerRect, Projectile Rect: $projectileRect")
                 alienProjectilesToRemove.add(projectile)
                 handlePlayerLightHit()
             }
@@ -305,7 +317,9 @@ class GameViewModel(
     }
 
     private fun handlePlayerGraveHit() {
+        if (isPlayerInvincible.value) return
         lives.intValue--
+        triggerInvincibility()
         if (lives.intValue <= 0) {
             endGame(GameStatus.GameOver)
         } else {
@@ -314,7 +328,9 @@ class GameViewModel(
     }
 
     private fun handlePlayerLightHit() {
+        if (isPlayerInvincible.value) return
         lives.intValue--
+        triggerInvincibility()
         if (lives.intValue <= 0) {
             endGame(GameStatus.GameOver)
         }

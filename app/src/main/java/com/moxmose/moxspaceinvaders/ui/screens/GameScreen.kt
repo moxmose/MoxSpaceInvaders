@@ -1,5 +1,9 @@
 package com.moxmose.moxspaceinvaders.ui.screens
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -33,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -70,6 +75,23 @@ fun GameScreen(
     val aliens by gameViewModel.aliens
     val motherShip by gameViewModel.motherShip
     val gameState by gameViewModel.gameState
+    val isPlayerInvincible by gameViewModel.isPlayerInvincible
+
+    val invincibilityAlpha = remember { Animatable(1f) }
+
+    LaunchedEffect(isPlayerInvincible) {
+        if (isPlayerInvincible) {
+            invincibilityAlpha.animateTo(
+                targetValue = 0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 150),
+                    repeatMode = RepeatMode.Reverse
+                )
+            )
+        } else {
+            invincibilityAlpha.snapTo(1f)
+        }
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -223,6 +245,7 @@ fun GameScreen(
         Image(
             painter = painterResource(id = R.mipmap.astro_pl_1),
             contentDescription = "Player Ship",
+            alpha = if(isPlayerInvincible) invincibilityAlpha.value else 1f,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .offset(x = playerPositionX.dp, y = -playerOffsetYdp)
