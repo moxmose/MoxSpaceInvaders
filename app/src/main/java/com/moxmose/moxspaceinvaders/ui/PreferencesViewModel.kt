@@ -28,8 +28,8 @@ class PreferencesViewModel(
     private var backgroundSelectionFallback: String? = null
 
     val availableCardResourceNames: List<String> = buildList {
-        (0..19).forEach { add("img_c_%02d".format(it)) } // 20 "refined" cards
-        (0..9).forEach { add("img_s_%02d".format(it)) }  // 10 "simple" cards
+        (1..4).forEach { add("astro_pl_$it") } 
+        (1..4).forEach { add("astro_al_$it") }  
     }
 
     val selectedCards: StateFlow<Set<String>> = appSettingsDataStore.selectedCards
@@ -73,7 +73,7 @@ class PreferencesViewModel(
             val currentCardsFromDataStore = appSettingsDataStore.selectedCards.first()
 
             if (currentCardsFromDataStore.size < initialMinRequiredPairs) {
-                appSettingsDataStore.saveSelectedCards(IAppSettingsDataStore.DEFAULT_SELECTED_CARDS)
+                // appSettingsDataStore.saveSelectedCards(IAppSettingsDataStore.DEFAULT_SELECTED_CARDS) // Commented to avoid side-effects
             }
             _tempSelectedCards.value = appSettingsDataStore.selectedCards.first()
         }
@@ -88,11 +88,7 @@ class PreferencesViewModel(
     }
 
     fun getCardDisplayName(resourceName: String): String {
-        return when {
-            resourceName.startsWith("img_c_") -> "Refined ${resourceName.removePrefix("img_c_").removePrefix("0")}"
-            resourceName.startsWith("img_s_") -> "Simple ${resourceName.removePrefix("img_s_").removePrefix("0")}"
-            else -> resourceName
-        }
+        return resourceName 
     }
 
     fun prepareForBackgroundSelection() {

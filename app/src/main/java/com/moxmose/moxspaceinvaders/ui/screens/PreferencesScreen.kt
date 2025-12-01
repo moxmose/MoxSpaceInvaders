@@ -55,7 +55,6 @@ import com.moxmose.moxspaceinvaders.ui.BackgroundMusicManager
 import com.moxmose.moxspaceinvaders.ui.PreferencesViewModel
 import com.moxmose.moxspaceinvaders.ui.composables.BackgroundImg
 import com.moxmose.moxspaceinvaders.ui.composables.BackgroundSelectionDialog
-import com.moxmose.moxspaceinvaders.ui.composables.BoardDimensionsSection
 import com.moxmose.moxspaceinvaders.ui.composables.CardSelectionDialog
 import com.moxmose.moxspaceinvaders.ui.composables.CardSelectionSection
 import com.moxmose.moxspaceinvaders.ui.composables.MusicSelectionDialog
@@ -78,10 +77,8 @@ fun PreferencesScreen(
     val selectedCardsFromDataStore by preferencesViewModel.selectedCards.collectAsState()
 
     val availableCardResourceNames = preferencesViewModel.availableCardResourceNames
-
-    val currentBoardWidth by preferencesViewModel.selectedBoardWidth.collectAsState()
-    val currentBoardHeight by preferencesViewModel.selectedBoardHeight.collectAsState()
-    val boardDimensionError by preferencesViewModel.boardDimensionError.collectAsState()
+    val selectedBoardWidth by preferencesViewModel.selectedBoardWidth.collectAsState()
+    val selectedBoardHeight by preferencesViewModel.selectedBoardHeight.collectAsState()
 
     // Music states
     val isMusicEnabled by preferencesViewModel.isMusicEnabled.collectAsState()
@@ -97,16 +94,6 @@ fun PreferencesScreen(
     var showRefinedCardDialog by remember { mutableStateOf(false) }
     var showSimpleCardDialog by remember { mutableStateOf(false) }
     var showMusicDialog by remember { mutableStateOf(false) }
-
-    var tempSliderWidth by remember(currentBoardWidth) { mutableStateOf(currentBoardWidth.toFloat()) }
-    var tempSliderHeight by remember(currentBoardHeight) { mutableStateOf(currentBoardHeight.toFloat()) }
-
-    LaunchedEffect(currentBoardWidth) {
-        tempSliderWidth = currentBoardWidth.toFloat()
-    }
-    LaunchedEffect(currentBoardHeight) {
-        tempSliderHeight = currentBoardHeight.toFloat()
-    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -135,13 +122,6 @@ fun PreferencesScreen(
 
     val refinedCountFromDataStore = selectedCardsFromDataStore.count { it.startsWith("img_c_") }
     val simpleCountFromDataStore = selectedCardsFromDataStore.count { it.startsWith("img_s_") }
-
-    val tempRefinedCount = tempSelectedCards.count { it.startsWith("img_c_") }
-    val tempSimpleCount = tempSelectedCards.count { it.startsWith("img_s_") }
-
-    val minRequiredPairs = remember(currentBoardWidth, currentBoardHeight) {
-        (currentBoardWidth * currentBoardHeight) / 2
-    }
 
     // --- DIALOGS ---
     if (showBackgroundDialog) {
@@ -173,10 +153,10 @@ fun PreferencesScreen(
             onToggleSelectAll = { selectAll ->
                 preferencesViewModel.toggleSelectAllCards(refinedCardResourceNames, selectAll)
             },
-            minRequired = minRequiredPairs,
+            minRequired = (selectedBoardWidth * selectedBoardHeight) / 2,
             title = stringResource(
                 R.string.preferences_button_select_refined_cards,
-                tempRefinedCount,
+                tempSelectedCards.count { it.startsWith("img_c_") },
                 refinedCardResourceNames.size
             )
         )
@@ -197,10 +177,10 @@ fun PreferencesScreen(
             onToggleSelectAll = { selectAll ->
                 preferencesViewModel.toggleSelectAllCards(simpleCardResourceNames, selectAll)
             },
-            minRequired = minRequiredPairs,
+            minRequired = (selectedBoardWidth * selectedBoardHeight) / 2,
             title = stringResource(
                 R.string.preferences_button_select_simple_cards,
-                tempSimpleCount,
+                tempSelectedCards.count { it.startsWith("img_s_") },
                 simpleCardResourceNames.size
             )
         )
@@ -217,7 +197,7 @@ fun PreferencesScreen(
                 showMusicDialog = false
             },
             onPlayPreview = { track -> preferencesViewModel.playMusicPreview(track) },
-            allTracks = BackgroundMusic.Companion.allTracks,
+            allTracks = BackgroundMusic.allTracks,
             initialSelection = selectedMusicTrackNames
         )
         DisposableEffect(Unit) {
@@ -279,46 +259,20 @@ fun PreferencesScreen(
                     }
 
                     item {
-                        BoardDimensionsSection(
-                            modifier = Modifier.padding(top = 8.dp),
-                            tempSliderWidth = tempSliderWidth,
-                            tempSliderHeight = tempSliderHeight,
-                            currentBoardWidth = currentBoardWidth,
-                            currentBoardHeight = currentBoardHeight,
-                            boardDimensionError = boardDimensionError,
-                            onWidthChange = { tempSliderWidth = it },
-                            onHeightChange = { tempSliderHeight = it },
-                            onWidthChangeFinished = {
-                                preferencesViewModel.updateBoardDimensions(
-                                    tempSliderWidth.roundToInt(),
-                                    currentBoardHeight
-                                )
-                            },
-                            onHeightChangeFinished = {
-                                preferencesViewModel.updateBoardDimensions(
-                                    currentBoardWidth,
-                                    tempSliderHeight.roundToInt()
-                                )
-                            }
-                        )
-                    }
-
-                    item {
                         CardSelectionSection(
-                            modifier = Modifier.padding(top = 8.dp),
                             selectedRefinedCount = refinedCountFromDataStore,
                             refinedCardResourceNames = refinedCardResourceNames,
                             selectedSimpleCount = simpleCountFromDataStore,
                             simpleCardResourceNames = simpleCardResourceNames,
-                            minRequiredPairs = minRequiredPairs,
+                            minRequiredPairs = (selectedBoardWidth * selectedBoardHeight) / 2,
                             selectedCardsCount = selectedCardsFromDataStore.size,
-                            onRefinedClick = {
+                            onRefinedClick = { 
                                 preferencesViewModel.prepareForCardSelection()
-                                showRefinedCardDialog = true
+                                showRefinedCardDialog = true 
                             },
-                            onSimpleClick = {
+                            onSimpleClick = { 
                                 preferencesViewModel.prepareForCardSelection()
-                                showSimpleCardDialog = true
+                                showSimpleCardDialog = true 
                             }
                         )
                     }
@@ -448,7 +402,8 @@ fun SoundEffectsPreferencesSection(
         )
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
