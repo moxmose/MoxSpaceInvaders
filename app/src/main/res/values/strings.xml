@@ -42,6 +42,12 @@
     <string name="preferences_sfx_settings_title">SOUND EFFECTS SETTINGS</string>
     <string name="preferences_sfx_enable_label">Enable Sound Effects</string>
     <string name="preferences_sfx_volume_label">Volume: %1$d%%</string>
+    <string name="preferences_button_select_player_ship">SELECT PLAYER SHIP</string>
+    <string name="preferences_button_select_enemy_ship">SELECT ENEMY SHIP</string>
+    <string name="preferences_button_select_mother_ship">SELECT MOTHER SHIP</string>
+    <string name="ship_selection_dialog_title_player">Select Player Ship</string>
+    <string name="ship_selection_dialog_title_enemy">Select Enemy Ship</string>
+    <string name="ship_selection_dialog_title_mother">Select Mother Ship</string>
 
     <!-- Card Types -->
     <string name="card_type_refined">Refined</string>
@@ -53,7 +59,9 @@
     <string name="image_preview_dialog_image_not_found">Image not found</string>
     <string name="image_preview_dialog_content_description">Preview %1$s</string>
     <string name="about_dialog_title">About Mox Space Invaders</string>
-    <string name="about_dialog_content">This is a classic memory game where you have to find all the pairs of cards.\n\nDeveloped with and for Jetpack Compose, with my abilities for the skeleton and the game\'s working code, using the help of AI for free contents (Copilot for graphics, MusicGPT for music) and massively for refactoring and testing (Gemini who provided constant help and worked a lot), plus free sounds found on the web.</string>
+    <string name="about_dialog_content">This is a Space Invaders game developed with Kotlin and Jetpack Compose.
+
+Developed with and for Jetpack Compose, based entirely on my previous work Mox \"Memory Game\". Credits goes to me and Gemini for the constant assistance.</string>
     <string name="copyright_notice">Copyright © %1$d %2$s. All rights reserved.</string>
     <string name="license_notice">Released under the MIT License.</string>
 

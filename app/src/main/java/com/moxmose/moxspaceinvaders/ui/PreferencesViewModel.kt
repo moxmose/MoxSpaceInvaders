@@ -1,3 +1,4 @@
+
 package com.moxmose.moxspaceinvaders.ui
 
 import androidx.lifecycle.ViewModel
@@ -27,21 +28,28 @@ class PreferencesViewModel(
 
     private var backgroundSelectionFallback: String? = null
 
-    val availableCardResourceNames: List<String> = buildList {
-        (1..4).forEach { add("astro_pl_$it") } 
-        (1..4).forEach { add("astro_al_$it") }  
-    }
+    val availablePlayerShips: List<String> = (1..4).map { "astro_pl_$it" }
+    val availableEnemyShips: List<String> = (1..4).map { "astro_al_$it" }
+    val availableMotherShips: List<String> = (1..3).map { "astro_mo_$it" }
 
-    val selectedCards: StateFlow<Set<String>> = appSettingsDataStore.selectedCards
+    val playerShip: StateFlow<String> = appSettingsDataStore.playerShip
+    val enemyShip: StateFlow<String> = appSettingsDataStore.enemyShip
+    val motherShip: StateFlow<String> = appSettingsDataStore.motherShip
 
-    private val _tempSelectedCards = MutableStateFlow<Set<String>>(emptySet())
-    val tempSelectedCards: StateFlow<Set<String>> = _tempSelectedCards.asStateFlow()
+    private val _tempPlayerShip = MutableStateFlow("")
+    val tempPlayerShip: StateFlow<String> = _tempPlayerShip.asStateFlow()
+
+    private val _tempEnemyShip = MutableStateFlow("")
+    val tempEnemyShip: StateFlow<String> = _tempEnemyShip.asStateFlow()
+
+    private val _tempMotherShip = MutableStateFlow("")
+    val tempMotherShip: StateFlow<String> = _tempMotherShip.asStateFlow()
 
     val selectedBoardWidth: StateFlow<Int> = appSettingsDataStore.selectedBoardWidth
     val selectedBoardHeight: StateFlow<Int> = appSettingsDataStore.selectedBoardHeight
 
-    private val _cardSelectionError = MutableStateFlow<String?>(null)
-    val cardSelectionError: StateFlow<String?> = _cardSelectionError.asStateFlow()
+    private val _selectionError = MutableStateFlow<String?>(null)
+    val selectionError: StateFlow<String?> = _selectionError.asStateFlow()
 
     private val _boardDimensionError = MutableStateFlow<String?>(null)
     val boardDimensionError: StateFlow<String?> = _boardDimensionError.asStateFlow()
@@ -55,7 +63,9 @@ class PreferencesViewModel(
     val areSoundEffectsEnabled: StateFlow<Boolean> = appSettingsDataStore.areSoundEffectsEnabled
     val soundEffectsVolume: StateFlow<Float> = appSettingsDataStore.soundEffectsVolume
 
-    private var lastSaveCardsJob: Job? = null
+    private var lastSavePlayerShipJob: Job? = null
+    private var lastSaveEnemyShipJob: Job? = null
+    private var lastSaveMotherShipJob: Job? = null
     private var lastSaveBackgroundsJob: Job? = null
     private var lastSaveDimensionsJob: Job? = null
     private var lastSaveMusicJob: Job? = null
@@ -66,16 +76,9 @@ class PreferencesViewModel(
             appSettingsDataStore.isDataLoaded.filter { it }.first()
 
             _selectedBackgrounds.value = appSettingsDataStore.selectedBackgrounds.first()
-
-            val initialBoardWidth = selectedBoardWidth.first()
-            val initialBoardHeight = selectedBoardHeight.first()
-            val initialMinRequiredPairs = (initialBoardWidth * initialBoardHeight) / 2
-            val currentCardsFromDataStore = appSettingsDataStore.selectedCards.first()
-
-            if (currentCardsFromDataStore.size < initialMinRequiredPairs) {
-                // appSettingsDataStore.saveSelectedCards(IAppSettingsDataStore.DEFAULT_SELECTED_CARDS) // Commented to avoid side-effects
-            }
-            _tempSelectedCards.value = appSettingsDataStore.selectedCards.first()
+            _tempPlayerShip.value = appSettingsDataStore.playerShip.first()
+            _tempEnemyShip.value = appSettingsDataStore.enemyShip.first()
+            _tempMotherShip.value = appSettingsDataStore.motherShip.first()
         }
     }
 
@@ -85,10 +88,6 @@ class PreferencesViewModel(
                 appSettingsDataStore.savePlayerName(newName)
             }
         }
-    }
-
-    fun getCardDisplayName(resourceName: String): String {
-        return resourceName 
     }
 
     fun prepareForBackgroundSelection() {
@@ -124,57 +123,70 @@ class PreferencesViewModel(
         }
     }
 
-    fun prepareForCardSelection() {
-        _tempSelectedCards.value = selectedCards.value
+    fun prepareForPlayerShipSelection() {
+        _tempPlayerShip.value = playerShip.value
     }
 
-    fun confirmCardSelections() {
-        val minRequiredPairs = (selectedBoardWidth.value * selectedBoardHeight.value) / 2
-        if (_tempSelectedCards.value.size >= minRequiredPairs) {
-            _cardSelectionError.value = null
-            lastSaveCardsJob = viewModelScope.launch {
-                appSettingsDataStore.saveSelectedCards(_tempSelectedCards.value)
+    fun updatePlayerShipSelection(shipName: String) {
+        _tempPlayerShip.value = shipName
+    }
+
+    fun confirmPlayerShipSelection() {
+        if (_tempPlayerShip.value.isNotBlank()) {
+            _selectionError.value = null
+            lastSavePlayerShipJob = viewModelScope.launch {
+                appSettingsDataStore.savePlayerShip(_tempPlayerShip.value)
             }
         } else {
-            _cardSelectionError.value = "Minimum $minRequiredPairs cards required for the current board size. You have selected ${_tempSelectedCards.value.size}."
+            _selectionError.value = "A player ship must be selected."
         }
     }
 
-    fun updateCardSelection(cardName: String, isSelected: Boolean) {
-        val currentSelection = _tempSelectedCards.value.toMutableSet()
-        if (isSelected) {
-            currentSelection.add(cardName)
+    fun prepareForEnemyShipSelection() {
+        _tempEnemyShip.value = enemyShip.value
+    }
+
+    fun updateEnemyShipSelection(shipName: String) {
+        _tempEnemyShip.value = shipName
+    }
+
+    fun confirmEnemyShipSelection() {
+        if (_tempEnemyShip.value.isNotBlank()) {
+            _selectionError.value = null
+            lastSaveEnemyShipJob = viewModelScope.launch {
+                appSettingsDataStore.saveEnemyShip(_tempEnemyShip.value)
+            }
         } else {
-            currentSelection.remove(cardName)
+            _selectionError.value = "An enemy ship must be selected."
         }
-        _tempSelectedCards.value = currentSelection
     }
 
-    fun toggleSelectAllCards(cardSet: List<String>, selectAll: Boolean) {
-        val currentSelection = _tempSelectedCards.value.toMutableSet()
-        if (selectAll) {
-            currentSelection.addAll(cardSet)
+    fun prepareForMotherShipSelection() {
+        _tempMotherShip.value = motherShip.value
+    }
+
+    fun updateMotherShipSelection(shipName: String) {
+        _tempMotherShip.value = shipName
+    }
+
+    fun confirmMotherShipSelection() {
+        if (_tempMotherShip.value.isNotBlank()) {
+            _selectionError.value = null
+            lastSaveMotherShipJob = viewModelScope.launch {
+                appSettingsDataStore.saveMotherShip(_tempMotherShip.value)
+            }
         } else {
-            currentSelection.removeAll(cardSet.toSet())
+            _selectionError.value = "A mother ship must be selected."
         }
-        _tempSelectedCards.value = currentSelection
     }
 
-    fun clearCardSelectionError() {
-        _cardSelectionError.value = null
+    fun clearSelectionError() {
+        _selectionError.value = null
     }
 
     fun updateBoardDimensions(newWidth: Int, newHeight: Int) {
-        val currentSelectedCardsCount = selectedCards.value.size
-        val requiredPairs = (newWidth * newHeight) / 2
-
-        if (newWidth < MIN_BOARD_WIDTH || newWidth > MAX_BOARD_WIDTH || newHeight < MIN_BOARD_HEIGHT || newHeight > MAX_BOARD_HEIGHT || (newWidth * newHeight) % 2 != 0) {
+        if (newWidth < MIN_BOARD_WIDTH || newWidth > MAX_BOARD_WIDTH || newHeight < MIN_BOARD_HEIGHT || newHeight > MAX_BOARD_HEIGHT) {
             _boardDimensionError.value = "Invalid dimensions."
-            return
-        }
-
-        if (currentSelectedCardsCount < requiredPairs) {
-            _boardDimensionError.value = "Board size ${newWidth}x${newHeight} requires $requiredPairs pairs. You have $currentSelectedCardsCount."
             return
         }
 
@@ -191,7 +203,9 @@ class PreferencesViewModel(
     fun onBackToMainMenuClicked() {
         viewModelScope.launch {
             lastSaveBackgroundsJob?.join()
-            lastSaveCardsJob?.join()
+            lastSavePlayerShipJob?.join()
+            lastSaveEnemyShipJob?.join()
+            lastSaveMotherShipJob?.join()
             lastSaveDimensionsJob?.join()
             lastSaveMusicJob?.join()
             lastSaveSfxJob?.join()

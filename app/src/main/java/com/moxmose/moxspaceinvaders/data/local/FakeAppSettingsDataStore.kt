@@ -1,3 +1,4 @@
+
 package com.moxmose.moxspaceinvaders.data.local
 
 import com.moxmose.moxspaceinvaders.model.ScoreEntry
@@ -9,6 +10,15 @@ import kotlinx.coroutines.flow.asStateFlow
 class FakeAppSettingsDataStore : IAppSettingsDataStore {
     private val _playerName = MutableStateFlow(IAppSettingsDataStore.DEFAULT_PLAYER_NAME)
     override val playerName: StateFlow<String> = _playerName.asStateFlow()
+
+    private val _playerShip = MutableStateFlow(IAppSettingsDataStore.DEFAULT_PLAYER_SHIP)
+    override val playerShip: StateFlow<String> = _playerShip.asStateFlow()
+
+    private val _enemyShip = MutableStateFlow(IAppSettingsDataStore.DEFAULT_ENEMY_SHIP)
+    override val enemyShip: StateFlow<String> = _enemyShip.asStateFlow()
+
+    private val _motherShip = MutableStateFlow(IAppSettingsDataStore.DEFAULT_MOTHER_SHIP)
+    override val motherShip: StateFlow<String> = _motherShip.asStateFlow()
 
     private val _selectedBackgrounds = MutableStateFlow(IAppSettingsDataStore.DEFAULT_SELECTED_BACKGROUNDS)
     override val selectedBackgrounds: StateFlow<Set<String>> = _selectedBackgrounds.asStateFlow()
@@ -57,6 +67,21 @@ class FakeAppSettingsDataStore : IAppSettingsDataStore {
     override suspend fun savePlayerName(name: String) {
         delay(saveDelayMillis)
         _playerName.value = name
+    }
+
+    override suspend fun savePlayerShip(ship: String) {
+        delay(saveDelayMillis)
+        _playerShip.value = ship
+    }
+
+    override suspend fun saveEnemyShip(ship: String) {
+        delay(saveDelayMillis)
+        _enemyShip.value = ship
+    }
+
+    override suspend fun saveMotherShip(ship: String) {
+        delay(saveDelayMillis)
+        _motherShip.value = ship
     }
 
     override suspend fun saveSelectedBackgrounds(backgrounds: Set<String>) {

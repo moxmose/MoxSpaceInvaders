@@ -1,3 +1,4 @@
+
 package com.moxmose.moxspaceinvaders.data.local
 
 import com.moxmose.moxspaceinvaders.model.ScoreEntry
@@ -7,6 +8,9 @@ interface IAppSettingsDataStore {
 
     val isDataLoaded: StateFlow<Boolean>
     val playerName: StateFlow<String>
+    val playerShip: StateFlow<String>
+    val enemyShip: StateFlow<String>
+    val motherShip: StateFlow<String>
     val selectedBackgrounds: StateFlow<Set<String>>
     val selectedCards: StateFlow<Set<String>>
     val selectedBoardWidth: StateFlow<Int>
@@ -23,6 +27,9 @@ interface IAppSettingsDataStore {
     val soundEffectsVolume: StateFlow<Float>
 
     suspend fun savePlayerName(name: String)
+    suspend fun savePlayerShip(ship: String)
+    suspend fun saveEnemyShip(ship: String)
+    suspend fun saveMotherShip(ship: String)
     suspend fun saveSelectedBackgrounds(backgrounds: Set<String>)
     suspend fun saveSelectedCards(cards: Set<String>)
     suspend fun saveBoardDimensions(width: Int, height: Int)
@@ -36,6 +43,9 @@ interface IAppSettingsDataStore {
 
     companion object {
         const val DEFAULT_PLAYER_NAME = "Player"
+        const val DEFAULT_PLAYER_SHIP = "astro_pl_1"
+        const val DEFAULT_ENEMY_SHIP = "astro_al_1"
+        const val DEFAULT_MOTHER_SHIP = "astro_mo_1"
         val DEFAULT_SELECTED_BACKGROUNDS = setOf("background_00")
         val DEFAULT_SELECTED_CARDS = setOf("img_c_00", "img_c_01", "img_c_02", "img_c_03", "img_c_04", "img_c_05")
         const val DEFAULT_BOARD_WIDTH = 4

@@ -1,3 +1,4 @@
+
 package com.moxmose.moxspaceinvaders.ui.composables
 
 import androidx.compose.foundation.Image
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -25,6 +27,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,48 +53,51 @@ import androidx.compose.ui.window.DialogProperties
 import com.moxmose.moxspaceinvaders.R
 
 @Composable
-fun Legacy_CardSelectionDialog(
+fun ShipSelectionDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    cardResourceNames: List<String>,
-    selectedCards: Set<String>,
-    onCardSelectionChanged: (String, Boolean) -> Unit,
+    shipResourceNames: List<String>,
+    selectedShips: Set<String>,
+    onShipSelectionChanged: (String, Boolean) -> Unit,
     onToggleSelectAll: (Boolean) -> Unit,
     minRequired: Int,
-    title: String
+    title: String,
+    singleSelectionMode: Boolean = false
 ) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(dismissOnClickOutside = true, dismissOnBackPress = true)
     ) {
-        Legacy_CardSelectionDialogContent(
+        ShipSelectionDialogContent(
             onDismiss = onDismiss,
             onConfirm = onConfirm,
-            cardResourceNames = cardResourceNames,
-            selectedCards = selectedCards,
-            onCardSelectionChanged = onCardSelectionChanged,
+            shipResourceNames = shipResourceNames,
+            selectedShips = selectedShips,
+            onShipSelectionChanged = onShipSelectionChanged,
             onToggleSelectAll = onToggleSelectAll,
             minRequired = minRequired,
-            title = title
+            title = title,
+            singleSelectionMode = singleSelectionMode
         )
     }
 }
 
 @Composable
-private fun Legacy_CardSelectionDialogContent(
+private fun ShipSelectionDialogContent(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    cardResourceNames: List<String>,
-    selectedCards: Set<String>,
-    onCardSelectionChanged: (String, Boolean) -> Unit,
+    shipResourceNames: List<String>,
+    selectedShips: Set<String>,
+    onShipSelectionChanged: (String, Boolean) -> Unit,
     onToggleSelectAll: (Boolean) -> Unit,
     minRequired: Int,
-    title: String
+    title: String,
+    singleSelectionMode: Boolean
 ) {
     var selectedImageForPreview by remember { mutableStateOf<String?>(null) }
 
     if (selectedImageForPreview != null) {
-        Legacy_ImagePreviewDialog(
+        ImagePreviewDialog(
             imageName = selectedImageForPreview!!,
             onDismiss = { selectedImageForPreview = null }
         )
@@ -113,44 +119,52 @@ private fun Legacy_CardSelectionDialogContent(
                         .fillMaxWidth()
                         .padding(bottom = 8.dp)
                 )
-                val isSelectionInvalid = selectedCards.size < minRequired
-                Text(
-                    text = buildAnnotatedString {
-                        append(stringResource(R.string.preferences_min_cards_required_info_part1))
-                        append(" ")
-                        val part2 = stringResource(R.string.preferences_min_cards_required_info_part2, selectedCards.size, minRequired)
-                        if (isSelectionInvalid) {
-                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)) {
+                if (!singleSelectionMode) {
+                    val isSelectionInvalid = selectedShips.size < minRequired
+                    Text(
+                        text = buildAnnotatedString {
+                            append(stringResource(R.string.preferences_min_cards_required_info_part1))
+                            append(" ")
+                            val part2 = stringResource(
+                                R.string.preferences_min_cards_required_info_part2,
+                                selectedShips.size,
+                                minRequired
+                            )
+                            if (isSelectionInvalid) {
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)) {
+                                    append(part2)
+                                }
+                            } else {
                                 append(part2)
                             }
-                        } else {
-                            append(part2)
-                        }
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                )
-
-                val allSelected = remember(cardResourceNames, selectedCards) {
-                    cardResourceNames.isNotEmpty() && selectedCards.containsAll(cardResourceNames)
-                }
-                OutlinedButton(
-                    onClick = { onToggleSelectAll(!allSelected) },
-                    shape = RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 0.dp,
-                        bottomStart = 0.dp,
-                        bottomEnd = 16.dp
-                    ),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.dialog_select_deselect_all),
-                        style = MaterialTheme.typography.bodyLarge
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
                     )
+                }
+
+                if (!singleSelectionMode) {
+                    val allSelected = remember(shipResourceNames, selectedShips) {
+                        shipResourceNames.isNotEmpty() && selectedShips.containsAll(shipResourceNames)
+                    }
+                    OutlinedButton(
+                        onClick = { onToggleSelectAll(!allSelected) },
+                        shape = RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 0.dp,
+                            bottomStart = 0.dp,
+                            bottomEnd = 16.dp
+                        ),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.dialog_select_deselect_all),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
 
                 Box(modifier = Modifier.weight(1f, fill = false)) {
@@ -160,39 +174,40 @@ private fun Legacy_CardSelectionDialogContent(
                         state = lazyListState,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(cardResourceNames) { cardName ->
+                        items(shipResourceNames) { shipName ->
                             val context = LocalContext.current
-                            val drawableId = remember(cardName) {
-                                context.resources.getIdentifier(cardName, "drawable", context.packageName)
+                            val drawableId = remember(shipName) {
+                                context.resources.getIdentifier(shipName, "mipmap", context.packageName)
                             }
 
-                            val displayName = when {
-                                cardName.startsWith("img_c_") -> stringResource(R.string.card_name_refined, cardName.removePrefix("img_c_").removePrefix("0"))
-                                cardName.startsWith("img_s_") -> stringResource(R.string.card_name_simple, cardName.removePrefix("img_s_").removePrefix("0"))
-                                else -> cardName.replace("_", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-                            }
+                            val displayName = shipName.replace("_", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 
-                            var isChecked by remember(selectedCards) { mutableStateOf(cardName in selectedCards) }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .selectable(
+                                        selected = shipName in selectedShips,
+                                        onClick = { onShipSelectionChanged(shipName, !(shipName in selectedShips)) }
+                                    )
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable {
-                                            isChecked = !isChecked
-                                            onCardSelectionChanged(cardName, isChecked)
-                                        }
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Checkbox(
-                                        checked = isChecked,
-                                        onCheckedChange = { onCardSelectionChanged(cardName, it) }
-                                    )
+                                    if (singleSelectionMode) {
+                                        RadioButton(
+                                            selected = shipName in selectedShips,
+                                            onClick = { onShipSelectionChanged(shipName, true) }
+                                        )
+                                    } else {
+                                        Checkbox(
+                                            checked = shipName in selectedShips,
+                                            onCheckedChange = { onShipSelectionChanged(shipName, it) }
+                                        )
+                                    }
                                     Text(
                                         text = displayName,
                                         modifier = Modifier.padding(start = 8.dp)
@@ -201,10 +216,10 @@ private fun Legacy_CardSelectionDialogContent(
                                 if (drawableId != 0) {
                                     Image(
                                         painter = painterResource(id = drawableId),
-                                        contentDescription = stringResource(R.string.dialog_item_thumbnail_description, cardName),
+                                        contentDescription = stringResource(R.string.dialog_item_thumbnail_description, shipName),
                                         modifier = Modifier
                                             .size(40.dp)
-                                            .clickable { selectedImageForPreview = cardName }
+                                            .clickable { selectedImageForPreview = shipName }
                                     )
                                 }
                             }
@@ -225,7 +240,7 @@ private fun Legacy_CardSelectionDialogContent(
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = onConfirm,
-                    enabled = selectedCards.size >= minRequired, // Added enable check
+                    enabled = selectedShips.size >= minRequired,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(
                         topStart = 16.dp,
@@ -245,10 +260,11 @@ private fun Legacy_CardSelectionDialogContent(
 }
 
 @Composable
-fun Legacy_ImagePreviewDialog(imageName: String, onDismiss: () -> Unit) {
+fun ImagePreviewDialog(imageName: String, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val drawableId = remember(imageName) {
-        context.resources.getIdentifier(imageName, "drawable", context.packageName)
+    val resType = if (imageName.startsWith("astro")) "mipmap" else "drawable"
+    val drawableId = remember(imageName, resType) {
+        context.resources.getIdentifier(imageName, resType, context.packageName)
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -274,32 +290,48 @@ fun Legacy_ImagePreviewDialog(imageName: String, onDismiss: () -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
-fun Legacy_CardSelectionDialogPreview() {
-    val cardList = List(20) { "img_c_%02d".format(it) }
-    var selected by remember { mutableStateOf(setOf("img_c_00")) }
+fun ShipSelectionDialogMultiPreview() {
+    val shipList = List(4) { "astro_al_$it" }
+    var selected by remember { mutableStateOf(setOf("astro_al_1")) }
 
     MaterialTheme {
-        Legacy_CardSelectionDialogContent(
+        ShipSelectionDialogContent(
             onDismiss = {},
             onConfirm = {},
-            cardResourceNames = cardList,
-            selectedCards = selected,
-            onCardSelectionChanged = { cardName, isSelected ->
-                selected = if (isSelected) selected + cardName else selected - cardName
+            shipResourceNames = shipList,
+            selectedShips = selected,
+            onShipSelectionChanged = { shipName, isSelected ->
+                selected = if (isSelected) selected + shipName else selected - shipName
             },
             onToggleSelectAll = { selectAll ->
-                selected = if (selectAll) selected + cardList.toSet() else selected - cardList.toSet()
+                selected = if (selectAll) selected + shipList.toSet() else selected - shipList.toSet()
             },
-            minRequired = 10, // Example for the preview
-            title = stringResource(id = R.string.preferences_button_select_refined_cards, 0, 0)
+            minRequired = 1,
+            title = "Select Enemy Ships",
+            singleSelectionMode = false
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun Legacy_ImagePreviewDialogPreview() {
+fun ShipSelectionDialogSinglePreview() {
+    val shipList = List(4) { "astro_pl_$it" }
+    var selected by remember { mutableStateOf(setOf("astro_pl_1")) }
+
     MaterialTheme {
-        Legacy_ImagePreviewDialog(imageName = "img_c_00", onDismiss = {})
+        ShipSelectionDialogContent(
+            onDismiss = {},
+            onConfirm = {},
+            shipResourceNames = shipList,
+            selectedShips = selected,
+            onShipSelectionChanged = { shipName, _ ->
+                selected = setOf(shipName)
+            },
+            onToggleSelectAll = {},
+            minRequired = 1,
+            title = "Select Player Ship",
+            singleSelectionMode = true
+        )
     }
 }

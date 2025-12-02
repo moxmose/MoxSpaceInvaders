@@ -1,3 +1,4 @@
+
 package com.moxmose.moxspaceinvaders.ui.screens
 
 import android.annotation.SuppressLint
@@ -23,6 +24,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarDuration
@@ -55,10 +58,10 @@ import com.moxmose.moxspaceinvaders.ui.BackgroundMusicManager
 import com.moxmose.moxspaceinvaders.ui.PreferencesViewModel
 import com.moxmose.moxspaceinvaders.ui.composables.BackgroundImg
 import com.moxmose.moxspaceinvaders.ui.composables.BackgroundSelectionDialog
-import com.moxmose.moxspaceinvaders.ui.composables.CardSelectionDialog
-import com.moxmose.moxspaceinvaders.ui.composables.CardSelectionSection
+import com.moxmose.moxspaceinvaders.ui.composables.Legacy_CardSelectionDialog
 import com.moxmose.moxspaceinvaders.ui.composables.MusicSelectionDialog
 import com.moxmose.moxspaceinvaders.ui.composables.PlayerNameSection
+import com.moxmose.moxspaceinvaders.ui.composables.ShipSelectionDialog
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
@@ -73,12 +76,13 @@ fun PreferencesScreen(
     val selectedBackgroundsFromVM by preferencesViewModel.selectedBackgrounds.collectAsState()
     val availableBackgrounds = preferencesViewModel.availableBackgrounds
 
-    val tempSelectedCards by preferencesViewModel.tempSelectedCards.collectAsState()
-    val selectedCardsFromDataStore by preferencesViewModel.selectedCards.collectAsState()
+    val tempPlayerShip by preferencesViewModel.tempPlayerShip.collectAsState()
+    val tempEnemyShip by preferencesViewModel.tempEnemyShip.collectAsState()
+    val tempMotherShip by preferencesViewModel.tempMotherShip.collectAsState()
 
-    val availableCardResourceNames = preferencesViewModel.availableCardResourceNames
-    val selectedBoardWidth by preferencesViewModel.selectedBoardWidth.collectAsState()
-    val selectedBoardHeight by preferencesViewModel.selectedBoardHeight.collectAsState()
+    val availablePlayerShips = preferencesViewModel.availablePlayerShips
+    val availableEnemyShips = preferencesViewModel.availableEnemyShips
+    val availableMotherShips = preferencesViewModel.availableMotherShips
 
     // Music states
     val isMusicEnabled by preferencesViewModel.isMusicEnabled.collectAsState()
@@ -91,37 +95,28 @@ fun PreferencesScreen(
 
     var tempPlayerName by remember(playerName) { mutableStateOf(playerName) }
     var showBackgroundDialog by remember { mutableStateOf(false) }
-    var showRefinedCardDialog by remember { mutableStateOf(false) }
-    var showSimpleCardDialog by remember { mutableStateOf(false) }
+    var showPlayerShipDialog by remember { mutableStateOf(false) }
+    var showEnemyShipDialog by remember { mutableStateOf(false) }
+    var showMotherShipDialog by remember { mutableStateOf(false) }
     var showMusicDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val cardSelectionError by preferencesViewModel.cardSelectionError.collectAsState()
+    val selectionError by preferencesViewModel.selectionError.collectAsState()
 
     val lazyListState = rememberLazyListState()
 
-    LaunchedEffect(cardSelectionError) {
-        cardSelectionError?.let {
+    LaunchedEffect(selectionError) {
+        selectionError?.let {
             scope.launch {
                 snackbarHostState.showSnackbar(
                     message = it,
                     duration = SnackbarDuration.Short
                 )
-                preferencesViewModel.clearCardSelectionError()
+                preferencesViewModel.clearSelectionError()
             }
         }
     }
-
-    val refinedCardResourceNames = remember(availableCardResourceNames) {
-        availableCardResourceNames.filter { it.startsWith("img_c_") }
-    }
-    val simpleCardResourceNames = remember(availableCardResourceNames) {
-        availableCardResourceNames.filter { it.startsWith("img_s_") }
-    }
-
-    val refinedCountFromDataStore = selectedCardsFromDataStore.count { it.startsWith("img_c_") }
-    val simpleCountFromDataStore = selectedCardsFromDataStore.count { it.startsWith("img_s_") }
 
     // --- DIALOGS ---
     if (showBackgroundDialog) {
@@ -138,51 +133,60 @@ fun PreferencesScreen(
         )
     }
 
-    if (showRefinedCardDialog) {
-        CardSelectionDialog(
-            onDismiss = { showRefinedCardDialog = false },
+    if (showPlayerShipDialog) {
+        ShipSelectionDialog(
+            onDismiss = { showPlayerShipDialog = false },
             onConfirm = {
-                preferencesViewModel.confirmCardSelections()
-                showRefinedCardDialog = false
+                preferencesViewModel.confirmPlayerShipSelection()
+                showPlayerShipDialog = false
             },
-            cardResourceNames = refinedCardResourceNames,
-            selectedCards = tempSelectedCards,
-            onCardSelectionChanged = { cardName, isSelected ->
-                preferencesViewModel.updateCardSelection(cardName, isSelected)
+            shipResourceNames = availablePlayerShips,
+            selectedShips = setOf(tempPlayerShip),
+            onShipSelectionChanged = { shipName, _ -> // isSelected is ignored for single selection
+                preferencesViewModel.updatePlayerShipSelection(shipName)
             },
-            onToggleSelectAll = { selectAll ->
-                preferencesViewModel.toggleSelectAllCards(refinedCardResourceNames, selectAll)
-            },
-            minRequired = (selectedBoardWidth * selectedBoardHeight) / 2,
-            title = stringResource(
-                R.string.preferences_button_select_refined_cards,
-                tempSelectedCards.count { it.startsWith("img_c_") },
-                refinedCardResourceNames.size
-            )
+            onToggleSelectAll = {},
+            minRequired = 1,
+            title = stringResource(R.string.ship_selection_dialog_title_player),
+            singleSelectionMode = true
         )
     }
 
-    if (showSimpleCardDialog) {
-        CardSelectionDialog(
-            onDismiss = { showSimpleCardDialog = false },
+    if (showEnemyShipDialog) {
+        ShipSelectionDialog(
+            onDismiss = { showEnemyShipDialog = false },
             onConfirm = {
-                preferencesViewModel.confirmCardSelections()
-                showSimpleCardDialog = false
+                preferencesViewModel.confirmEnemyShipSelection()
+                showEnemyShipDialog = false
             },
-            cardResourceNames = simpleCardResourceNames,
-            selectedCards = tempSelectedCards,
-            onCardSelectionChanged = { cardName, isSelected ->
-                preferencesViewModel.updateCardSelection(cardName, isSelected)
+            shipResourceNames = availableEnemyShips,
+            selectedShips = setOf(tempEnemyShip),
+            onShipSelectionChanged = { shipName, _ ->
+                preferencesViewModel.updateEnemyShipSelection(shipName)
             },
-            onToggleSelectAll = { selectAll ->
-                preferencesViewModel.toggleSelectAllCards(simpleCardResourceNames, selectAll)
+            onToggleSelectAll = {},
+            minRequired = 1,
+            title = stringResource(R.string.ship_selection_dialog_title_enemy),
+            singleSelectionMode = true
+        )
+    }
+
+    if (showMotherShipDialog) {
+        ShipSelectionDialog(
+            onDismiss = { showMotherShipDialog = false },
+            onConfirm = {
+                preferencesViewModel.confirmMotherShipSelection()
+                showMotherShipDialog = false
             },
-            minRequired = (selectedBoardWidth * selectedBoardHeight) / 2,
-            title = stringResource(
-                R.string.preferences_button_select_simple_cards,
-                tempSelectedCards.count { it.startsWith("img_s_") },
-                simpleCardResourceNames.size
-            )
+            shipResourceNames = availableMotherShips,
+            selectedShips = setOf(tempMotherShip),
+            onShipSelectionChanged = { shipName, _ ->
+                preferencesViewModel.updateMotherShipSelection(shipName)
+            },
+            onToggleSelectAll = {},
+            minRequired = 1,
+            title = stringResource(R.string.ship_selection_dialog_title_mother),
+            singleSelectionMode = true
         )
     }
 
@@ -222,7 +226,7 @@ fun PreferencesScreen(
                 LazyColumn(
                     state = lazyListState,
                     modifier = Modifier
-                        .testTag("PreferencesList") // Added for testing
+                        .testTag("PreferencesList")
                         .fillMaxSize()
                         .padding(horizontal = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -230,18 +234,14 @@ fun PreferencesScreen(
                     contentPadding = PaddingValues(vertical = 16.dp)
                 ) {
                     item {
-                        Text(stringResource(R.string.preferences_screen_title), style = MaterialTheme.typography.headlineMedium)
+                        Text(stringResource(R.string.preferences_screen_title), style = typography.headlineMedium)
                     }
 
                     item {
                         PlayerNameSection(
                             tempPlayerName = tempPlayerName,
                             onPlayerNameChange = { tempPlayerName = it },
-                            onSavePlayerName = {
-                                preferencesViewModel.updatePlayerName(
-                                    tempPlayerName
-                                )
-                            }
+                            onSavePlayerName = { preferencesViewModel.updatePlayerName(tempPlayerName) }
                         )
                     }
 
@@ -254,27 +254,47 @@ fun PreferencesScreen(
                             shape = RoundedCornerShape(topStart = 1.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 1.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(stringResource(R.string.preferences_button_select_backgrounds, selectedBackgroundsFromVM.size), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.preferences_button_select_backgrounds, selectedBackgroundsFromVM.size), textAlign = TextAlign.Center, style = typography.bodyLarge)
                         }
                     }
 
                     item {
-                        CardSelectionSection(
-                            selectedRefinedCount = refinedCountFromDataStore,
-                            refinedCardResourceNames = refinedCardResourceNames,
-                            selectedSimpleCount = simpleCountFromDataStore,
-                            simpleCardResourceNames = simpleCardResourceNames,
-                            minRequiredPairs = (selectedBoardWidth * selectedBoardHeight) / 2,
-                            selectedCardsCount = selectedCardsFromDataStore.size,
-                            onRefinedClick = { 
-                                preferencesViewModel.prepareForCardSelection()
-                                showRefinedCardDialog = true 
+                        OutlinedButton(
+                            onClick = {
+                                preferencesViewModel.prepareForPlayerShipSelection()
+                                showPlayerShipDialog = true
                             },
-                            onSimpleClick = { 
-                                preferencesViewModel.prepareForCardSelection()
-                                showSimpleCardDialog = true 
-                            }
-                        )
+                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 1.dp, bottomStart = 1.dp, bottomEnd = 16.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.preferences_button_select_player_ship), textAlign = TextAlign.Center, style = typography.bodyLarge)
+                        }
+                    }
+
+                    item {
+                        OutlinedButton(
+                            onClick = {
+                                preferencesViewModel.prepareForEnemyShipSelection()
+                                showEnemyShipDialog = true
+                            },
+                            shape = RoundedCornerShape(topStart = 1.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 1.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.preferences_button_select_enemy_ship), textAlign = TextAlign.Center, style = typography.bodyLarge)
+                        }
+                    }
+
+                    item {
+                        OutlinedButton(
+                            onClick = {
+                                preferencesViewModel.prepareForMotherShipSelection()
+                                showMotherShipDialog = true
+                            },
+                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 1.dp, bottomStart = 1.dp, bottomEnd = 16.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.preferences_button_select_mother_ship), textAlign = TextAlign.Center, style = typography.bodyLarge)
+                        }
                     }
 
                     item {
@@ -295,7 +315,7 @@ fun PreferencesScreen(
                             onSelectTracksClicked = { showMusicDialog = true }
                         )
                     }
-                    
+
                     item {
                         SoundEffectsPreferencesSection(
                             areSfxEnabled = areSfxEnabled,
@@ -312,7 +332,7 @@ fun PreferencesScreen(
                             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 1.dp, bottomStart = 1.dp, bottomEnd = 16.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(stringResource(R.string.preferences_button_back_to_main_menu), style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.preferences_button_back_to_main_menu), style = typography.bodyLarge)
                         }
                     }
                 }
@@ -325,7 +345,7 @@ fun PreferencesScreen(
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 8.dp)
                             .size(32.dp),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        tint = colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -346,7 +366,7 @@ fun MusicPreferencesSection(
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringResource(R.string.preferences_music_settings_title),
-            style = MaterialTheme.typography.titleMedium,
+            style = typography.titleMedium,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
@@ -356,16 +376,16 @@ fun MusicPreferencesSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(stringResource(R.string.preferences_music_enable_label), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.preferences_music_enable_label), style = typography.bodyLarge)
             Switch(
-                checked = isMusicEnabled, 
+                checked = isMusicEnabled,
                 onCheckedChange = onMusicEnabledChange,
                 modifier = Modifier.testTag("MusicSwitch")
             )
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.preferences_music_volume_label, (musicVolume * 100).roundToInt()), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.preferences_music_volume_label, (musicVolume * 100).roundToInt()), style = typography.bodyLarge)
             Slider(
                 value = musicVolume,
                 onValueChange = onMusicVolumeChange,
@@ -381,7 +401,7 @@ fun MusicPreferencesSection(
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 1.dp, bottomStart = 1.dp, bottomEnd = 16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.preferences_button_select_music_tracks, selectedTracksCount), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.preferences_button_select_music_tracks, selectedTracksCount), textAlign = TextAlign.Center, style = typography.bodyLarge)
         }
     }
 }
@@ -396,7 +416,7 @@ fun SoundEffectsPreferencesSection(
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringResource(R.string.preferences_sfx_settings_title),
-            style = MaterialTheme.typography.titleMedium,
+            style = typography.titleMedium,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
@@ -407,16 +427,16 @@ fun SoundEffectsPreferencesSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(stringResource(R.string.preferences_sfx_enable_label), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.preferences_sfx_enable_label), style = typography.bodyLarge)
             Switch(
-                checked = areSfxEnabled, 
+                checked = areSfxEnabled,
                 onCheckedChange = onSfxEnabledChange,
                 modifier = Modifier.testTag("SfxSwitch")
             )
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.preferences_sfx_volume_label, (sfxVolume * 100).roundToInt()), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.preferences_sfx_volume_label, (sfxVolume * 100).roundToInt()), style = typography.bodyLarge)
             Slider(
                 value = sfxVolume,
                 onValueChange = onSfxVolumeChange,

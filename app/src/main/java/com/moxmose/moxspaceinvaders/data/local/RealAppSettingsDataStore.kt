@@ -1,3 +1,4 @@
+
 package com.moxmose.moxspaceinvaders.data.local
 
 import android.content.Context
@@ -36,6 +37,9 @@ class RealAppSettingsDataStore(
 
     private object Keys {
         val PLAYER_NAME = stringPreferencesKey("player_name")
+        val PLAYER_SHIP = stringPreferencesKey("player_ship")
+        val ENEMY_SHIP = stringPreferencesKey("enemy_ship")
+        val MOTHER_SHIP = stringPreferencesKey("mother_ship")
         val SELECTED_BACKGROUNDS = stringSetPreferencesKey("selected_backgrounds")
         val SELECTED_CARDS = stringSetPreferencesKey("selected_cards")
         val SELECTED_BOARD_WIDTH = intPreferencesKey("selected_board_width")
@@ -64,6 +68,9 @@ class RealAppSettingsDataStore(
     override val isDataLoaded: StateFlow<Boolean> = flow.map { true }.stateIn(externalScope, SharingStarted.Eagerly, false)
 
     override val playerName: StateFlow<String> = flow.map { it[Keys.PLAYER_NAME] ?: IAppSettingsDataStore.DEFAULT_PLAYER_NAME }.stateIn(externalScope, SharingStarted.Eagerly, IAppSettingsDataStore.DEFAULT_PLAYER_NAME)
+    override val playerShip: StateFlow<String> = flow.map { it[Keys.PLAYER_SHIP] ?: IAppSettingsDataStore.DEFAULT_PLAYER_SHIP }.stateIn(externalScope, SharingStarted.Eagerly, IAppSettingsDataStore.DEFAULT_PLAYER_SHIP)
+    override val enemyShip: StateFlow<String> = flow.map { it[Keys.ENEMY_SHIP] ?: IAppSettingsDataStore.DEFAULT_ENEMY_SHIP }.stateIn(externalScope, SharingStarted.Eagerly, IAppSettingsDataStore.DEFAULT_ENEMY_SHIP)
+    override val motherShip: StateFlow<String> = flow.map { it[Keys.MOTHER_SHIP] ?: IAppSettingsDataStore.DEFAULT_MOTHER_SHIP }.stateIn(externalScope, SharingStarted.Eagerly, IAppSettingsDataStore.DEFAULT_MOTHER_SHIP)
     override val selectedBackgrounds: StateFlow<Set<String>> = flow.map { it[Keys.SELECTED_BACKGROUNDS] ?: IAppSettingsDataStore.DEFAULT_SELECTED_BACKGROUNDS }.stateIn(externalScope, SharingStarted.Eagerly, IAppSettingsDataStore.DEFAULT_SELECTED_BACKGROUNDS)
     override val selectedCards: StateFlow<Set<String>> = flow.map { it[Keys.SELECTED_CARDS] ?: IAppSettingsDataStore.DEFAULT_SELECTED_CARDS }.stateIn(externalScope, SharingStarted.Eagerly, IAppSettingsDataStore.DEFAULT_SELECTED_CARDS)
     override val selectedBoardWidth: StateFlow<Int> = flow.map { it[Keys.SELECTED_BOARD_WIDTH] ?: IAppSettingsDataStore.DEFAULT_BOARD_WIDTH }.stateIn(externalScope, SharingStarted.Eagerly, IAppSettingsDataStore.DEFAULT_BOARD_WIDTH)
@@ -81,6 +88,18 @@ class RealAppSettingsDataStore(
 
     override suspend fun savePlayerName(name: String) {
         dataStore.edit { it[Keys.PLAYER_NAME] = name }
+    }
+
+    override suspend fun savePlayerShip(ship: String) {
+        dataStore.edit { it[Keys.PLAYER_SHIP] = ship }
+    }
+
+    override suspend fun saveEnemyShip(ship: String) {
+        dataStore.edit { it[Keys.ENEMY_SHIP] = ship }
+    }
+
+    override suspend fun saveMotherShip(ship: String) {
+        dataStore.edit { it[Keys.MOTHER_SHIP] = ship }
     }
 
     override suspend fun saveSelectedBackgrounds(backgrounds: Set<String>) {

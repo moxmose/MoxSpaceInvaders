@@ -37,7 +37,7 @@ fun CardSelectionSection(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = stringResource(R.string.preferences_card_selection_title), 
+            text = "Appearance", 
             style = MaterialTheme.typography.titleMedium, 
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
@@ -48,9 +48,9 @@ fun CardSelectionSection(
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 1.dp, bottomStart = 1.dp, bottomEnd = 16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("RefinedCardsButton")
+                .testTag("PlayerSkinButton")
         ) {
-            Text(stringResource(R.string.preferences_button_select_refined_cards, selectedRefinedCount, refinedCardResourceNames.size), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+            Text("Select Player Skin ($selectedRefinedCount)", textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
         }
 
         OutlinedButton(
@@ -58,9 +58,9 @@ fun CardSelectionSection(
             shape = RoundedCornerShape(topStart = 1.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 1.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("SimpleCardsButton")
+                .testTag("AlienSkinButton")
         ) {
-            Text(stringResource(R.string.preferences_button_select_simple_cards, selectedSimpleCount, simpleCardResourceNames.size), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+            Text("Select Alien Skin ($selectedSimpleCount)", textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
         }
 
         val isSelectionInvalid = selectedCardsCount < minRequiredPairs
