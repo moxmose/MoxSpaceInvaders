@@ -1,3 +1,4 @@
+
 package com.moxmose.moxspaceinvaders.ui.screens
 
 import androidx.compose.animation.core.Animatable
@@ -20,13 +21,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PestControl
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
@@ -45,6 +43,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -73,9 +72,12 @@ fun GameScreen(
     val projectiles by gameViewModel.projectiles
     val alienProjectiles by gameViewModel.alienProjectiles
     val aliens by gameViewModel.aliens
-    val motherShip by gameViewModel.motherShip
+    val motherShipState by gameViewModel.motherShipState
     val gameState by gameViewModel.gameState
     val isPlayerInvincible by gameViewModel.isPlayerInvincible
+    val playerShip by gameViewModel.playerShip.collectAsState()
+    val enemyShip by gameViewModel.enemyShip.collectAsState()
+    val motherShip by gameViewModel.motherShip.collectAsState()
 
     val invincibilityAlpha = remember { Animatable(1f) }
 
@@ -118,6 +120,14 @@ fun GameScreen(
             modifier = Modifier.fillMaxSize()
         )
 
+        val context = LocalContext.current
+        val enemyShipId = remember(enemyShip) {
+            context.resources.getIdentifier(enemyShip, "mipmap", context.packageName)
+        }
+        val motherShipId = remember(motherShip) {
+            context.resources.getIdentifier(motherShip, "mipmap", context.packageName)
+        }
+
         // --- DISEGNO DEGLI OGGETTI DI GIOCO ---
         
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -137,40 +147,43 @@ fun GameScreen(
             }
         }
 
-        aliens.forEach { alien ->
-            val xDp = with(density) { alien.position.x.toDp() }
-            val yDp = with(density) { alien.position.y.toDp() }
-            val sizeDp = with(density) { alien.size.width.toDp() }
+        if (enemyShipId != 0) {
+            aliens.forEach { alien ->
+                val xDp = with(density) { alien.position.x.toDp() }
+                val yDp = with(density) { alien.position.y.toDp() }
+                val sizeDp = with(density) { alien.size.width.toDp() }
 
-            Box(modifier = Modifier.offset(x = xDp, y = yDp).size(sizeDp)) {
-                Image(
-                    painter = painterResource(id = R.mipmap.astro_al_1),
-                    contentDescription = "Alien",
-                    modifier = Modifier.fillMaxSize()
-                )
-                Image(
-                    painter = painterResource(id = R.mipmap.astro_al_1),
-                    contentDescription = "Alien Color Overlay",
-                    colorFilter = ColorFilter.tint(alien.color.copy(alpha = 0.03f), blendMode = BlendMode.SrcAtop),
-                    modifier = Modifier.fillMaxSize()
-                )
-
+                Box(modifier = Modifier.offset(x = xDp, y = yDp).size(sizeDp)) {
+                    Image(
+                        painter = painterResource(id = enemyShipId),
+                        contentDescription = "Alien",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Image(
+                        painter = painterResource(id = enemyShipId),
+                        contentDescription = "Alien Color Overlay",
+                        colorFilter = ColorFilter.tint(alien.color.copy(alpha = 0.03f), blendMode = BlendMode.SrcAtop),
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
 
-        motherShip?.let {
-            val xDp = with(density) { it.position.x.toDp() }
-            val yDp = with(density) { it.position.y.toDp() }
-            val sizeWidthDp = with(density) { it.size.width.toDp() }
-            val sizeHeightDp = with(density) { it.size.height.toDp() }
+        if (motherShipId != 0) {
+            motherShipState?.let {
+                val xDp = with(density) { it.position.x.toDp() }
+                val yDp = with(density) { it.position.y.toDp() }
+                val sizeWidthDp = with(density) { it.size.width.toDp() }
+                val sizeHeightDp = with(density) { it.size.height.toDp() }
 
-            Image(
-                painter = painterResource(id = R.mipmap.astro_mo_1),
-                contentDescription = "Mother Ship",
-                modifier = Modifier
-                    .offset(x = xDp, y = yDp)
-                    .size(sizeWidthDp, sizeHeightDp)
-            )
+                Image(
+                    painter = painterResource(id = motherShipId),
+                    contentDescription = "Mother Ship",
+                    modifier = Modifier
+                        .offset(x = xDp, y = yDp)
+                        .size(sizeWidthDp, sizeHeightDp)
+                )
+            }
         }
         
         // --- UI E CONTROLLI ---
@@ -242,15 +255,21 @@ fun GameScreen(
             }
         }
 
-        Image(
-            painter = painterResource(id = R.mipmap.astro_pl_1),
-            contentDescription = "Player Ship",
-            alpha = if(isPlayerInvincible) invincibilityAlpha.value else 1f,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(x = playerPositionX.dp, y = -playerOffsetYdp)
-                .size(playerSizeDp)
-        )
+        val playerShipId = remember(playerShip) {
+            context.resources.getIdentifier(playerShip, "mipmap", context.packageName)
+        }
+
+        if (playerShipId != 0) {
+            Image(
+                painter = painterResource(id = playerShipId),
+                contentDescription = "Player Ship",
+                alpha = if(isPlayerInvincible) invincibilityAlpha.value else 1f,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(x = playerPositionX.dp, y = -playerOffsetYdp)
+                    .size(playerSizeDp)
+            )
+        }
         
         if (gameState != GameStatus.Playing) {
             val message = if (gameState == GameStatus.Victory) "YOU WIN!" else "GAME OVER"

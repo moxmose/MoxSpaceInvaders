@@ -1,3 +1,4 @@
+
 package com.moxmose.moxspaceinvaders.ui
 
 import android.util.Log
@@ -49,6 +50,9 @@ class GameViewModel(
     val gameState = mutableStateOf(GameStatus.Playing)
     val currentTime = timerViewModel.elapsedSeconds
     val playerName: StateFlow<String> = appSettingsDataStore.playerName
+    val playerShip: StateFlow<String> = appSettingsDataStore.playerShip
+    val enemyShip: StateFlow<String> = appSettingsDataStore.enemyShip
+    val motherShip: StateFlow<String> = appSettingsDataStore.motherShip
     val selectedBackgrounds: StateFlow<Set<String>> = appSettingsDataStore.selectedBackgrounds
     val isPlayerInvincible = mutableStateOf(false)
 
@@ -58,7 +62,7 @@ class GameViewModel(
     val projectiles = mutableStateOf<List<ProjectileState>>(emptyList())
     val alienProjectiles = mutableStateOf<List<ProjectileState>>(emptyList())
     val aliens = mutableStateOf<List<AlienState>>(emptyList())
-    val motherShip = mutableStateOf<MotherShipState?>(null)
+    val motherShipState = mutableStateOf<MotherShipState?>(null)
 
     private val playerSpeed = 15f 
     private val projectileSpeed = 20f
@@ -114,7 +118,7 @@ class GameViewModel(
         movementInput.floatValue = 0f
         projectiles.value = emptyList()
         alienProjectiles.value = emptyList()
-        motherShip.value = null
+        motherShipState.value = null
         gameState.value = GameStatus.Playing
         isPlayerInvincible.value = false
         initializeAliens()
@@ -214,19 +218,19 @@ class GameViewModel(
     private fun handleMotherShipLogic() {
         if (screenWidthPx == 0f) return
 
-        if (motherShip.value == null) {
+        if (motherShipState.value == null) {
             val randomValue = Random.nextInt(0, 1000)
             if (randomValue < motherShipSpawnProbability) {
                 Log.d("MotherShip", "Spawning MotherShip! Rolled $randomValue")
-                motherShip.value = MotherShipState(position = Offset(-150f, 80f))
+                motherShipState.value = MotherShipState(position = Offset(-150f, 80f))
             }
         } else {
-            val newPosition = motherShip.value!!.position.x + motherShip.value!!.speed
+            val newPosition = motherShipState.value!!.position.x + motherShipState.value!!.speed
             if (newPosition > screenWidthPx) {
                 Log.d("MotherShip", "Despawning MotherShip off-screen.")
-                motherShip.value = null
+                motherShipState.value = null
             } else {
-                motherShip.value = motherShip.value!!.copy(position = Offset(newPosition, motherShip.value!!.position.y))
+                motherShipState.value = motherShipState.value!!.copy(position = Offset(newPosition, motherShipState.value!!.position.y))
             }
         }
     }
@@ -265,11 +269,11 @@ class GameViewModel(
                 }
             }
 
-            motherShip.value?.let {
+            motherShipState.value?.let {
                 val motherShipRect = Rect(it.position, it.size)
                 if (projectileRect.overlaps(motherShipRect)) {
                     playerProjectilesToRemove.add(projectile)
-                    motherShip.value = null
+                    motherShipState.value = null
                     score.intValue += 100
                 }
             }
