@@ -7,12 +7,8 @@ import androidx.navigation.createGraph
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.core.app.ApplicationProvider
 import com.moxmose.moxspaceinvaders.data.local.FakeAppSettingsDataStore
-import com.moxmose.moxspaceinvaders.data.local.IAppSettingsDataStore
 import com.moxmose.moxspaceinvaders.model.BackgroundMusic
 import com.google.common.truth.Truth.assertThat
-import com.moxmose.moxspaceinvaders.ui.BackgroundMusicManager
-import com.moxmose.moxspaceinvaders.ui.PreferencesViewModel
-import com.moxmose.moxspaceinvaders.ui.Screen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -55,7 +51,6 @@ class PreferencesViewModelTest {
             composable(Screen.OpeningMenuScreen.route) { }
         }
 
-        // Use a mock for the music manager to verify interactions
         mockMusicManager = mock(BackgroundMusicManager::class.java)
     }
 
@@ -63,7 +58,7 @@ class PreferencesViewModelTest {
         viewModel = PreferencesViewModel(
             navController = testNavController,
             appSettingsDataStore = fakeDataStore,
-            backgroundMusicManager = mockMusicManager // Use the mock
+            backgroundMusicManager = mockMusicManager
         )
     }
 
@@ -108,54 +103,36 @@ class PreferencesViewModelTest {
     }
 
     @Test
-    fun getCardDisplayName_returnsFormattedName() = runTest(testDispatcher) {
-        // Arrange
+    fun confirmPlayerShipSelection_savesToDataStore() = runTest(testDispatcher) {
         initViewModel()
-
-        // Act & Assert
-        val refinedName = viewModel.getCardDisplayName("img_c_05")
-        assertThat(refinedName).isEqualTo("Refined 5")
-
-        val simpleName = viewModel.getCardDisplayName("img_s_08")
-        assertThat(simpleName).isEqualTo("Simple 8")
-
-        val unknownName = viewModel.getCardDisplayName("unknown_resource")
-        assertThat(unknownName).isEqualTo("unknown_resource")
+        advanceUntilIdle()
+        val newShip = "astro_pl_2"
+        viewModel.updatePlayerShipSelection(newShip)
+        viewModel.confirmPlayerShipSelection()
+        advanceUntilIdle()
+        assertThat(fakeDataStore.playerShip.value).isEqualTo(newShip)
     }
 
     @Test
-    fun clearCardSelectionError_clearsTheError() = runTest(testDispatcher) {
-        // Arrange: first, create an error state
+    fun confirmEnemyShipSelection_savesToDataStore() = runTest(testDispatcher) {
         initViewModel()
-        fakeDataStore.saveBoardDimensions(4, 5) // requires 10 cards
         advanceUntilIdle()
-        viewModel.prepareForCardSelection()
-        // Clean the state and create an invalid selection
-        viewModel.toggleSelectAllCards(viewModel.tempSelectedCards.value.toList(), false)
-        viewModel.updateCardSelection("img_c_01", true) // select only 1 card
-        viewModel.confirmCardSelections()
-        assertThat(viewModel.cardSelectionError.value).isNotNull()
-
-        // Act
-        viewModel.clearCardSelectionError()
-
-        // Assert
-        assertThat(viewModel.cardSelectionError.value).isNull()
+        val newShip = "astro_al_3"
+        viewModel.updateEnemyShipSelection(newShip)
+        viewModel.confirmEnemyShipSelection()
+        advanceUntilIdle()
+        assertThat(fakeDataStore.enemyShip.value).isEqualTo(newShip)
     }
 
     @Test
-    fun clearBoardDimensionError_clearsTheError() = runTest(testDispatcher) {
-        // Arrange: first, create an error state
+    fun confirmMotherShipSelection_savesToDataStore() = runTest(testDispatcher) {
         initViewModel()
-        viewModel.updateBoardDimensions(PreferencesViewModel.MIN_BOARD_WIDTH - 1, 4) // Trigger error
         advanceUntilIdle()
-        assertThat(viewModel.boardDimensionError.value).isNotNull() // Pre-condition check
-
-        // Act
-        viewModel.clearBoardDimensionError()
-
-        // Assert
-        assertThat(viewModel.boardDimensionError.value).isNull()
+        val newShip = "astro_mo_2"
+        viewModel.updateMotherShipSelection(newShip)
+        viewModel.confirmMotherShipSelection()
+        advanceUntilIdle()
+        assertThat(fakeDataStore.motherShip.value).isEqualTo(newShip)
     }
 
     @Test
@@ -231,25 +208,6 @@ class PreferencesViewModelTest {
     }
 
     @Test
-    fun init_whenSelectedCardsAreInsufficient_loadsDefaultCards() = runTest(testDispatcher) {
-        // Arrange
-        val boardWidth = 4
-        val boardHeight = 6 // Requires 12 cards
-        val insufficientCards = setOf("img_c_01", "img_c_02") // Only 2 cards
-
-        fakeDataStore.saveBoardDimensions(boardWidth, boardHeight)
-        fakeDataStore.saveSelectedCards(insufficientCards)
-
-        // Act
-        initViewModel()
-        advanceUntilIdle()
-
-        // Assert
-        assertThat(viewModel.selectedCards.value).isEqualTo(IAppSettingsDataStore.DEFAULT_SELECTED_CARDS)
-        assertThat(viewModel.tempSelectedCards.value).isEqualTo(IAppSettingsDataStore.DEFAULT_SELECTED_CARDS)
-    }
-
-    @Test
     fun onBackToMainMenuClicked_waitsForSaveJobs_thenNavigates() = runTest(testDispatcher) {
         // Arrange
         initViewModel()
@@ -272,36 +230,6 @@ class PreferencesViewModelTest {
     }
 
     @Test
-    fun updateBoardDimensions_whenWidthIsBelowMin_setsError() = runTest(testDispatcher) {
-        // Arrange
-        initViewModel()
-        advanceUntilIdle()
-        val invalidWidth = PreferencesViewModel.MIN_BOARD_WIDTH - 1
-
-        // Act
-        viewModel.updateBoardDimensions(invalidWidth, PreferencesViewModel.MIN_BOARD_HEIGHT)
-        advanceUntilIdle()
-
-        // Assert
-        assertThat(viewModel.boardDimensionError.value).isNotNull()
-    }
-
-    @Test
-    fun updateBoardDimensions_whenHeightIsAboveMax_setsError() = runTest(testDispatcher) {
-        // Arrange
-        initViewModel()
-        advanceUntilIdle()
-        val invalidHeight = PreferencesViewModel.MAX_BOARD_HEIGHT + 1
-
-        // Act
-        viewModel.updateBoardDimensions(PreferencesViewModel.MIN_BOARD_WIDTH, invalidHeight)
-        advanceUntilIdle()
-
-        // Assert
-        assertThat(viewModel.boardDimensionError.value).isNotNull()
-    }
-
-    @Test
     fun toggleSelectAllBackgrounds_whenDeselectingAll_fallsBackToFirstSelected() = runTest(testDispatcher) {
         // 1. Arrange
         initViewModel()
@@ -319,178 +247,6 @@ class PreferencesViewModelTest {
         // 3. Assert
         val expectedFallback = "background_00"
         assertThat(viewModel.selectedBackgrounds.value).containsExactly(expectedFallback)
-    }
-
-    @Test
-    fun updateCardSelection_modifiesOnlyTempState() = runTest(testDispatcher) {
-        // 1. Arrange: Create a valid initial state
-        initViewModel()
-        val minRequired = (3 * 4) / 2 // 6 cards for a 3x4 grid
-        fakeDataStore.saveBoardDimensions(3, 4)
-        val initialCards = (1..minRequired).map { "img_c_%02d".format(it) }.toSet()
-        fakeDataStore.saveSelectedCards(initialCards)
-
-        advanceUntilIdle()
-        viewModel.prepareForCardSelection() // Populate temp state
-
-        // Verify that init didn't overwrite the data
-        assertThat(viewModel.selectedCards.value).isEqualTo(initialCards)
-        assertThat(viewModel.tempSelectedCards.value).isEqualTo(initialCards)
-
-        // 2. Act: Add a card
-        val newCard = "img_c_99"
-        viewModel.updateCardSelection(newCard, isSelected = true)
-
-        // 3. Assert: Verify that only the temp state has changed
-        val expectedTempCards = initialCards + newCard
-        assertThat(viewModel.tempSelectedCards.value).isEqualTo(expectedTempCards)
-
-        // Verify that the DataStore (and the connected flow) was NOT modified
-        assertThat(fakeDataStore.selectedCards.value).isEqualTo(initialCards)
-    }
-
-    @Test
-    fun confirmCardSelections_whenSelectionIsValid_savesToDataStore() = runTest(testDispatcher) {
-        // 1. Arrange
-        initViewModel()
-        val minRequired = (3 * 4) / 2 // 6
-        fakeDataStore.saveBoardDimensions(3, 4)
-        fakeDataStore.saveSelectedCards(setOf("img_c_01")) // Intentionally invalid initial state
-
-        advanceUntilIdle()
-        viewModel.prepareForCardSelection()
-
-        // Clear the temp state (which was polluted by default values)
-        viewModel.toggleSelectAllCards(viewModel.tempSelectedCards.value.toList(), selectAll = false)
-        assertThat(viewModel.tempSelectedCards.value).isEmpty()
-
-        val validSelection = (1..minRequired).map { "img_c_%02d".format(it) }.toSet()
-        validSelection.forEach { viewModel.updateCardSelection(it, true) } // Create a valid selection
-        assertThat(viewModel.tempSelectedCards.value).hasSize(minRequired)
-
-        // 2. Act
-        viewModel.confirmCardSelections()
-        advanceUntilIdle() // Wait for the save coroutine to complete
-
-        // 3. Assert
-        assertThat(fakeDataStore.selectedCards.value).isEqualTo(validSelection)
-        assertThat(viewModel.cardSelectionError.value).isNull()
-    }
-
-    @Test
-    fun confirmCardSelections_whenSelectionIsInvalid_doesNotSaveAndSetsError() = runTest(testDispatcher) {
-        // 1. Arrange
-        initViewModel()
-        val minRequired = (4 * 5) / 2 // 10
-        val initialCards = (1..minRequired + 2).map { "img_c_%02d".format(it) }.toSet()
-        fakeDataStore.saveBoardDimensions(4, 5)
-        fakeDataStore.saveSelectedCards(initialCards)
-
-        advanceUntilIdle()
-        viewModel.prepareForCardSelection()
-
-        val invalidSelection = setOf("img_s_01", "img_s_02") // Only 2 cards
-        viewModel.toggleSelectAllCards(viewModel.tempSelectedCards.value.toList(), false) // Deselect all
-        invalidSelection.forEach { viewModel.updateCardSelection(it, true) } // Select the 2 cards
-        assertThat(viewModel.tempSelectedCards.value).isEqualTo(invalidSelection)
-
-        // 2. Act
-        viewModel.confirmCardSelections()
-        advanceUntilIdle()
-
-        // 3. Assert
-        assertThat(viewModel.cardSelectionError.value).isNotNull()
-        assertThat(fakeDataStore.selectedCards.value).isEqualTo(initialCards) // Must remain in the initial state
-    }
-
-    @Test
-    fun updateBoardDimensions_whenValid_savesAndClearsError() = runTest(testDispatcher) {
-        // 1. Arrange: start from a grid large with enough cards
-        initViewModel()
-        val initialWidth = 4
-        val initialHeight = 5
-        val requiredCards = (initialWidth * initialHeight) / 2 // 10
-        val selectedCards = (1..requiredCards).map { "img_c_%02d".format(it) }.toSet()
-
-        fakeDataStore.saveBoardDimensions(initialWidth, initialHeight)
-        fakeDataStore.saveSelectedCards(selectedCards)
-
-        advanceUntilIdle()
-
-        // 2. Act: Reduce to a smaller but valid size
-        val newWidth = 3
-        val newHeight = 4 // Requires 6 cards, our selection of 10 is sufficient
-        viewModel.updateBoardDimensions(newWidth, newHeight)
-        advanceUntilIdle()
-
-        // 3. Assert
-        assertThat(fakeDataStore.selectedBoardWidth.value).isEqualTo(newWidth)
-        assertThat(fakeDataStore.selectedBoardHeight.value).isEqualTo(newHeight)
-        assertThat(viewModel.boardDimensionError.value).isNull()
-    }
-
-    @Test
-    fun updateBoardDimensions_whenInvalid_doesNotSaveAndSetsError() = runTest(testDispatcher) {
-        // 1. Arrange
-        initViewModel()
-        val initialWidth = 3
-        val initialHeight = 4
-        val requiredCards = (initialWidth * initialHeight) / 2 // 6
-        val selectedCards = (1..requiredCards).map { "img_c_%02d".format(it) }.toSet()
-
-        fakeDataStore.saveBoardDimensions(initialWidth, initialHeight)
-        fakeDataStore.saveSelectedCards(selectedCards)
-
-        advanceUntilIdle()
-
-        // 2. Act: Try to set dimensions that require more cards than selected
-        val newWidth = 5
-        val newHeight = 4 // Requires 10 cards, but we only have 6
-        viewModel.updateBoardDimensions(newWidth, newHeight)
-        advanceUntilIdle()
-
-        // 3. Assert
-        assertThat(viewModel.boardDimensionError.value).isNotNull()
-        // Verify that dimensions were NOT saved
-        assertThat(fakeDataStore.selectedBoardWidth.value).isEqualTo(initialWidth)
-        assertThat(fakeDataStore.selectedBoardHeight.value).isEqualTo(initialHeight)
-    }
-
-    @Test
-    fun updateBoardDimensions_whenHeightIsBelowMin_doesNotSaveAndSetsError() = runTest(testDispatcher) {
-        // 1. Arrange
-        initViewModel()
-        val initialWidth = 3
-        val initialHeight = 4
-        fakeDataStore.saveBoardDimensions(initialWidth, initialHeight)
-        advanceUntilIdle()
-
-        // 2. Act
-        viewModel.updateBoardDimensions(3, 2) // Height 2 < MIN_BOARD_HEIGHT (4)
-        advanceUntilIdle()
-
-        // 3. Assert
-        assertThat(viewModel.boardDimensionError.value).isNotNull()
-        assertThat(fakeDataStore.selectedBoardHeight.value).isEqualTo(initialHeight)
-    }
-
-    @Test
-    fun updateBoardDimensions_whenCellCountIsOdd_doesNotSaveAndSetsError() = runTest(testDispatcher) {
-        // 1. Arrange
-        initViewModel()
-        val initialWidth = 3
-        val initialHeight = 4
-        fakeDataStore.saveBoardDimensions(initialWidth, initialHeight)
-        advanceUntilIdle()
-
-        // 2. Act
-        viewModel.updateBoardDimensions(3, 5) // 3 * 5 = 15 (odd)
-        advanceUntilIdle()
-
-        // 3. Assert
-        assertThat(viewModel.boardDimensionError.value).isNotNull()
-        assertThat(fakeDataStore.selectedBoardWidth.value).isEqualTo(initialWidth)
-        assertThat(fakeDataStore.selectedBoardHeight.value).isEqualTo(initialHeight)
     }
 
     @Test
@@ -556,9 +312,9 @@ class PreferencesViewModelTest {
     @Test
     fun playMusicPreview_callsManager() = runTest(testDispatcher) {
         initViewModel()
-        val track = BackgroundMusic.ClassicSlowGuitar
-        viewModel.playMusicPreview(track)
-        verify(mockMusicManager).playPreview(track)
+        val mockTrack = mock(BackgroundMusic::class.java)
+        viewModel.playMusicPreview(mockTrack)
+        verify(mockMusicManager).playPreview(mockTrack)
     }
 
     @Test
