@@ -1,4 +1,3 @@
-
 package com.moxmose.moxspaceinvaders.ui
 
 import android.util.Log
@@ -13,6 +12,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.moxmose.moxspaceinvaders.data.local.IAppSettingsDataStore
+import com.moxmose.moxspaceinvaders.model.SoundEvent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -40,6 +40,7 @@ class GameViewModel(
     private val navController: NavHostController,
     private val timerViewModel: TimerViewModel,
     private val appSettingsDataStore: IAppSettingsDataStore,
+    private val soundUtils: SoundUtils,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val delayProvider: suspend (Long) -> Unit = { delay(it) }
 ) : ViewModel() {
@@ -212,6 +213,7 @@ class GameViewModel(
             val projectileStartPos = Offset(randomAlien.position.x + randomAlien.size.width / 2, randomAlien.position.y + randomAlien.size.height)
             val newProjectile = ProjectileState(position = projectileStartPos, color = Color.Red, size = Size(10f, 30f))
             alienProjectiles.value = alienProjectiles.value + newProjectile
+            soundUtils.playSound(SoundEvent.EnemyLaser.resId)
         }
     }
 
@@ -244,8 +246,6 @@ class GameViewModel(
     }
 
     private fun checkCollisions() {
-        if (isPlayerInvincible.value) return // Salta tutti i controlli di collisione del giocatore
-
         val playerProjectilesToRemove = mutableSetOf<ProjectileState>()
         val alienProjectilesToRemove = mutableSetOf<ProjectileState>()
         val aliensToRemove = mutableSetOf<AlienState>()
@@ -260,12 +260,17 @@ class GameViewModel(
 
         projectiles.value.forEach { projectile ->
             val projectileRect = Rect(projectile.position, projectile.size)
+            var alienHit = false
             aliens.value.forEach { alien ->
-                val alienRect = Rect(alien.position, alien.size)
-                if (projectileRect.overlaps(alienRect)) {
-                    playerProjectilesToRemove.add(projectile)
-                    aliensToRemove.add(alien)
-                    score.intValue += 10
+                if (!alienHit) {
+                    val alienRect = Rect(alien.position, alien.size)
+                    if (projectileRect.overlaps(alienRect)) {
+                        playerProjectilesToRemove.add(projectile)
+                        aliensToRemove.add(alien)
+                        score.intValue += 10
+                        soundUtils.playSound(SoundEvent.EnemyExplosion.resId)
+                        alienHit = true 
+                    }
                 }
             }
 
@@ -275,9 +280,12 @@ class GameViewModel(
                     playerProjectilesToRemove.add(projectile)
                     motherShipState.value = null
                     score.intValue += 100
+                    soundUtils.playSound(SoundEvent.MotherShipExplosion.resId)
                 }
             }
         }
+
+        if (isPlayerInvincible.value) return
 
         alienProjectiles.value.forEach { projectile ->
             val projectileRect = Rect(projectile.position, projectile.size)
@@ -323,6 +331,7 @@ class GameViewModel(
     private fun handlePlayerGraveHit() {
         if (isPlayerInvincible.value) return
         lives.intValue--
+        soundUtils.playSound(SoundEvent.PlayerExplosion.resId)
         triggerInvincibility()
         if (lives.intValue <= 0) {
             endGame(GameStatus.GameOver)
@@ -334,6 +343,7 @@ class GameViewModel(
     private fun handlePlayerLightHit() {
         if (isPlayerInvincible.value) return
         lives.intValue--
+        soundUtils.playSound(SoundEvent.PlayerExplosion.resId)
         triggerInvincibility()
         if (lives.intValue <= 0) {
             endGame(GameStatus.GameOver)
@@ -353,6 +363,7 @@ class GameViewModel(
                     val newProjectile = ProjectileState(position = event.startPositionPx)
                     projectiles.value = projectiles.value + newProjectile
                     lastShotTime = currentTime
+                    soundUtils.playSound(SoundEvent.PlayerLaser.resId)
                 }
             }
             GameEvent.Pause -> { /* Logica pausa */ }

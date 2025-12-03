@@ -43,7 +43,8 @@ val myAppModule = module {
         GameViewModel(
             navController = navController,
             timerViewModel = get(),
-            appSettingsDataStore = get()
+            appSettingsDataStore = get(),
+            soundUtils = get()
         )
     }
 
