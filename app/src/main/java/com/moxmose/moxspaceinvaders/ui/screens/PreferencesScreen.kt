@@ -1,4 +1,3 @@
-
 package com.moxmose.moxspaceinvaders.ui.screens
 
 import android.annotation.SuppressLint
@@ -58,7 +57,6 @@ import com.moxmose.moxspaceinvaders.ui.BackgroundMusicManager
 import com.moxmose.moxspaceinvaders.ui.PreferencesViewModel
 import com.moxmose.moxspaceinvaders.ui.composables.BackgroundImg
 import com.moxmose.moxspaceinvaders.ui.composables.BackgroundSelectionDialog
-import com.moxmose.moxspaceinvaders.ui.composables.Legacy_CardSelectionDialog
 import com.moxmose.moxspaceinvaders.ui.composables.MusicSelectionDialog
 import com.moxmose.moxspaceinvaders.ui.composables.PlayerNameSection
 import com.moxmose.moxspaceinvaders.ui.composables.ShipSelectionDialog
@@ -122,6 +120,10 @@ fun PreferencesScreen(
     if (showBackgroundDialog) {
         BackgroundSelectionDialog(
             onDismiss = { showBackgroundDialog = false },
+            onConfirm = {
+                preferencesViewModel.confirmBackgroundSelections()
+                showBackgroundDialog = false
+            },
             availableBackgrounds = availableBackgrounds,
             selectedBackgrounds = selectedBackgroundsFromVM,
             onBackgroundSelectionChanged = { bgName, isSelected ->
@@ -141,14 +143,11 @@ fun PreferencesScreen(
                 showPlayerShipDialog = false
             },
             shipResourceNames = availablePlayerShips,
-            selectedShips = setOf(tempPlayerShip),
-            onShipSelectionChanged = { shipName, _ -> // isSelected is ignored for single selection
+            selectedShip = tempPlayerShip,
+            onShipSelected = { shipName ->
                 preferencesViewModel.updatePlayerShipSelection(shipName)
             },
-            onToggleSelectAll = {},
-            minRequired = 1,
-            title = stringResource(R.string.ship_selection_dialog_title_player),
-            singleSelectionMode = true
+            title = stringResource(R.string.ship_selection_dialog_title_player)
         )
     }
 
@@ -160,14 +159,11 @@ fun PreferencesScreen(
                 showEnemyShipDialog = false
             },
             shipResourceNames = availableEnemyShips,
-            selectedShips = setOf(tempEnemyShip),
-            onShipSelectionChanged = { shipName, _ ->
+            selectedShip = tempEnemyShip,
+            onShipSelected = { shipName ->
                 preferencesViewModel.updateEnemyShipSelection(shipName)
             },
-            onToggleSelectAll = {},
-            minRequired = 1,
-            title = stringResource(R.string.ship_selection_dialog_title_enemy),
-            singleSelectionMode = true
+            title = stringResource(R.string.ship_selection_dialog_title_enemy)
         )
     }
 
@@ -179,14 +175,11 @@ fun PreferencesScreen(
                 showMotherShipDialog = false
             },
             shipResourceNames = availableMotherShips,
-            selectedShips = setOf(tempMotherShip),
-            onShipSelectionChanged = { shipName, _ ->
+            selectedShip = tempMotherShip,
+            onShipSelected = { shipName ->
                 preferencesViewModel.updateMotherShipSelection(shipName)
             },
-            onToggleSelectAll = {},
-            minRequired = 1,
-            title = stringResource(R.string.ship_selection_dialog_title_mother),
-            singleSelectionMode = true
+            title = stringResource(R.string.ship_selection_dialog_title_mother)
         )
     }
 

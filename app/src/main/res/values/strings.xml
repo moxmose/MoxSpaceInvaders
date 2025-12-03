@@ -19,18 +19,7 @@
     <string name="preferences_button_save_player_name">SAVE PLAYER NAME</string>
     <string name="preferences_button_select_backgrounds">SELECT BACKGROUNDS
 (%1$d selected)</string>
-    <string name="preferences_board_dimensions_title">BOARD DIMENSIONS</string>
-    <string name="preferences_card_selection_title">CARD SELECTION:</string>
-    <string name="preferences_button_select_refined_cards">SELECT REFINED CARDS
-(%1$d/%2$d selected)</string>
-    <string name="preferences_button_select_simple_cards">SELECT SIMPLE CARDS
-(%1$d/%2$d selected)</string>
-    <string name="preferences_min_cards_required_info_part1">Minimum cards required in total</string>
-    <string name="preferences_min_cards_required_info_part2">(%1$d / %2$d)</string>
     <string name="preferences_button_back_to_main_menu">BACK TO MAIN MENU</string>
-    <string name="preferences_board_width">Width: %1$d</string>
-    <string name="preferences_board_height">Height: %1$d</string>
-    <string name="preferences_board_current_size">Current Size: %1$dx%2$d</string>
     <string name="preferences_music_settings_title">MUSIC SETTINGS</string>
     <string name="preferences_music_enable_label">Enable Background Music</string>
     <string name="preferences_music_volume_label">Volume: %1$d%%</string>
@@ -49,19 +38,14 @@
     <string name="ship_selection_dialog_title_enemy">Select Enemy Ship</string>
     <string name="ship_selection_dialog_title_mother">Select Mother Ship</string>
 
-    <!-- Card Types -->
-    <string name="card_type_refined">Refined</string>
-    <string name="card_type_simple">Simple</string>
-
     <!-- Dialogs -->
-    <string name="card_set_selection_dialog_title">Select %1$s Cards</string>
     <string name="background_selection_dialog_title">Select Backgrounds</string>
     <string name="image_preview_dialog_image_not_found">Image not found</string>
     <string name="image_preview_dialog_content_description">Preview %1$s</string>
     <string name="about_dialog_title">About Mox Space Invaders</string>
     <string name="about_dialog_content">This is a Space Invaders game developed with Kotlin and Jetpack Compose.
 
-Developed with and for Jetpack Compose, based entirely on my previous work Mox \"Memory Game\". Credits goes to me and Gemini for the constant assistance.</string>
+Developed with and for Jetpack Compose, based entirely on my previous work \"Mox Memory Game\". Credits goes to me and Gemini for the constant assistance.\nGraphics, Music and effects from free online tools using IA.</string>
     <string name="copyright_notice">Copyright © %1$d %2$s. All rights reserved.</string>
     <string name="license_notice">Released under the MIT License.</string>
 
@@ -76,7 +60,6 @@ Developed with and for Jetpack Compose, based entirely on my previous work Mox \
 
     <!-- GameApp specific strings -->
     <string name="game_head_score">Score : %1$d</string>
-    <string name="game_head_moves">Moves: %1$d</string>
     <string name="game_head_time">Time: %1$s</string>
     <string name="game_tail_button_reset">RESET</string>
     <string name="game_tail_button_pause">PAUSE</string>
@@ -90,16 +73,9 @@ Developed with and for Jetpack Compose, based entirely on my previous work Mox \
     <string name="game_dialog_won_score_info">Your Score: %1$d</string>
     <string name="game_dialog_won_button_main_menu">GO TO MAIN MENU</string>
     <string name="game_background_default_error_description">Default background due to error</string>
-    <string name="game_card_content_description_back">Card back</string>
-    <string name="game_card_content_description_face">Game card face</string>
     <string name="preferences_scroll_down_indicator">Scroll
 Down</string>
-    <string name="game_loading_board">Loading game board...</string>
-    <string name="game_error_board_null">Error: Board not available. Please reset.</string>
     <string name="game_dialog_finished_title">FINISHED!</string>
     <string name="game_dialog_finished_subtitle">GAME ENDED</string>
-    <string name="game_error_images_not_loaded">Error: Card images not loaded for ShowTablePlay.</string>
-    <string name="card_name_refined">Refined %1$s</string>
-    <string name="card_name_simple">Simple %1$s</string>
 
 </resources>

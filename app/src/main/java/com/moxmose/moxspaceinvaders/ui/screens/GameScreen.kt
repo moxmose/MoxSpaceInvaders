@@ -1,4 +1,3 @@
-
 package com.moxmose.moxspaceinvaders.ui.screens
 
 import androidx.compose.animation.core.Animatable
@@ -193,7 +192,6 @@ fun GameScreen(
                 score = score,
                 lives = lives,
                 time = timeGameString,
-                onPause = { gameViewModel.onGameEvent(GameEvent.Pause) },
                 onReset = { gameViewModel.onGameEvent(GameEvent.Reset) },
                 onBack = { gameViewModel.onGameEvent(GameEvent.BackToMenu) }
             )
@@ -285,7 +283,6 @@ fun GameHeader(
     score: Int,
     lives: Int,
     time: String,
-    onPause: () -> Unit,
     onReset: () -> Unit,
     onBack: () -> Unit
 ) {
