@@ -366,7 +366,6 @@ class GameViewModel(
                     soundUtils.playSound(SoundEvent.PlayerLaser.resId)
                 }
             }
-            GameEvent.Pause -> { /* Logica pausa */ }
             GameEvent.Reset -> startGame()
             GameEvent.BackToMenu -> {
                 navController.popBackStack()
@@ -386,7 +385,6 @@ class GameViewModel(
 sealed class GameEvent {
     data class UpdateMovement(val direction: Float) : GameEvent()
     data class PlayerShoot(val startPositionPx: Offset) : GameEvent()
-    object Pause : GameEvent()
     object Reset : GameEvent()
     object BackToMenu : GameEvent()
 }

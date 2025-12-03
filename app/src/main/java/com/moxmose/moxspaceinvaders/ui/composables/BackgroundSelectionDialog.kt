@@ -45,6 +45,7 @@ import java.util.Locale
 @Composable
 fun BackgroundSelectionDialog(
     onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
     availableBackgrounds: List<String>,
     selectedBackgrounds: Set<String>,
     onBackgroundSelectionChanged: (String, Boolean) -> Unit,
@@ -52,7 +53,7 @@ fun BackgroundSelectionDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         BackgroundSelectionDialogContent(
-            onDismiss = onDismiss,
+            onConfirm = onConfirm,
             availableBackgrounds = availableBackgrounds,
             selectedBackgrounds = selectedBackgrounds,
             onBackgroundSelectionChanged = onBackgroundSelectionChanged,
@@ -63,7 +64,7 @@ fun BackgroundSelectionDialog(
 
 @Composable
 private fun BackgroundSelectionDialogContent(
-    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
     availableBackgrounds: List<String>,
     selectedBackgrounds: Set<String>,
     onBackgroundSelectionChanged: (String, Boolean) -> Unit,
@@ -181,7 +182,7 @@ private fun BackgroundSelectionDialogContent(
                 }
                 Spacer(Modifier.height(16.dp))
                 Button(
-                    onClick = onDismiss,
+                    onClick = onConfirm,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(
                         topStart = 16.dp,
@@ -215,7 +216,7 @@ fun BackgroundSelectionDialogPreview() {
 
     MaterialTheme {
         BackgroundSelectionDialogContent(
-            onDismiss = {},
+            onConfirm = {},
             availableBackgrounds = bgList,
             selectedBackgrounds = selected,
             onBackgroundSelectionChanged = { bgName, isSelected ->

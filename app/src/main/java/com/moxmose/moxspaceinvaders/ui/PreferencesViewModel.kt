@@ -1,4 +1,3 @@
-
 package com.moxmose.moxspaceinvaders.ui
 
 import androidx.lifecycle.ViewModel
@@ -45,14 +44,8 @@ class PreferencesViewModel(
     private val _tempMotherShip = MutableStateFlow("")
     val tempMotherShip: StateFlow<String> = _tempMotherShip.asStateFlow()
 
-    val selectedBoardWidth: StateFlow<Int> = appSettingsDataStore.selectedBoardWidth
-    val selectedBoardHeight: StateFlow<Int> = appSettingsDataStore.selectedBoardHeight
-
     private val _selectionError = MutableStateFlow<String?>(null)
     val selectionError: StateFlow<String?> = _selectionError.asStateFlow()
-
-    private val _boardDimensionError = MutableStateFlow<String?>(null)
-    val boardDimensionError: StateFlow<String?> = _boardDimensionError.asStateFlow()
 
     // Music Preferences
     val isMusicEnabled: StateFlow<Boolean> = appSettingsDataStore.isMusicEnabled
@@ -67,7 +60,6 @@ class PreferencesViewModel(
     private var lastSaveEnemyShipJob: Job? = null
     private var lastSaveMotherShipJob: Job? = null
     private var lastSaveBackgroundsJob: Job? = null
-    private var lastSaveDimensionsJob: Job? = null
     private var lastSaveMusicJob: Job? = null
     private var lastSaveSfxJob: Job? = null
 
@@ -184,29 +176,12 @@ class PreferencesViewModel(
         _selectionError.value = null
     }
 
-    fun updateBoardDimensions(newWidth: Int, newHeight: Int) {
-        if (newWidth < MIN_BOARD_WIDTH || newWidth > MAX_BOARD_WIDTH || newHeight < MIN_BOARD_HEIGHT || newHeight > MAX_BOARD_HEIGHT) {
-            _boardDimensionError.value = "Invalid dimensions."
-            return
-        }
-
-        _boardDimensionError.value = null
-        lastSaveDimensionsJob = viewModelScope.launch {
-            appSettingsDataStore.saveBoardDimensions(newWidth, newHeight)
-        }
-    }
-
-    fun clearBoardDimensionError() {
-        _boardDimensionError.value = null
-    }
-
     fun onBackToMainMenuClicked() {
         viewModelScope.launch {
             lastSaveBackgroundsJob?.join()
             lastSavePlayerShipJob?.join()
             lastSaveEnemyShipJob?.join()
             lastSaveMotherShipJob?.join()
-            lastSaveDimensionsJob?.join()
             lastSaveMusicJob?.join()
             lastSaveSfxJob?.join()
             backgroundMusicManager.stopPreview() // Ensure preview is stopped
@@ -259,9 +234,5 @@ class PreferencesViewModel(
 
     companion object {
         const val PLAYERNAME_MAX_LENGTH = 20
-        const val MIN_BOARD_WIDTH = 3
-        const val MAX_BOARD_WIDTH = 5
-        const val MIN_BOARD_HEIGHT = 4
-        const val MAX_BOARD_HEIGHT = 6
     }
 }

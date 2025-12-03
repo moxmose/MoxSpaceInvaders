@@ -1,4 +1,3 @@
-
 package com.moxmose.moxspaceinvaders.data.local
 
 import com.moxmose.moxspaceinvaders.model.ScoreEntry
@@ -23,20 +22,11 @@ class FakeAppSettingsDataStore : IAppSettingsDataStore {
     private val _selectedBackgrounds = MutableStateFlow(IAppSettingsDataStore.DEFAULT_SELECTED_BACKGROUNDS)
     override val selectedBackgrounds: StateFlow<Set<String>> = _selectedBackgrounds.asStateFlow()
 
-    private val _selectedCards = MutableStateFlow(IAppSettingsDataStore.DEFAULT_SELECTED_CARDS)
-    override val selectedCards: StateFlow<Set<String>> = _selectedCards.asStateFlow()
-
     private val _topRanking = MutableStateFlow<List<ScoreEntry>>(emptyList())
     override val topRanking: StateFlow<List<ScoreEntry>> = _topRanking.asStateFlow()
 
     private val _lastPlayedEntry = MutableStateFlow<ScoreEntry?>(null)
     override val lastPlayedEntry: StateFlow<ScoreEntry?> = _lastPlayedEntry.asStateFlow()
-
-    private val _selectedBoardWidth = MutableStateFlow(IAppSettingsDataStore.DEFAULT_BOARD_WIDTH)
-    override val selectedBoardWidth: StateFlow<Int> = _selectedBoardWidth.asStateFlow()
-
-    private val _selectedBoardHeight = MutableStateFlow(IAppSettingsDataStore.DEFAULT_BOARD_HEIGHT)
-    override val selectedBoardHeight: StateFlow<Int> = _selectedBoardHeight.asStateFlow()
 
     private val _isFirstTimeLaunch = MutableStateFlow(true)
     override val isFirstTimeLaunch: StateFlow<Boolean> = _isFirstTimeLaunch.asStateFlow()
@@ -89,11 +79,6 @@ class FakeAppSettingsDataStore : IAppSettingsDataStore {
         _selectedBackgrounds.value = backgrounds
     }
 
-    override suspend fun saveSelectedCards(cards: Set<String>) {
-        delay(saveDelayMillis)
-        _selectedCards.value = cards
-    }
-
     override suspend fun saveScore(playerName: String, score: Int) {
         delay(saveDelayMillis)
         val newEntry = ScoreEntry(playerName, score, System.currentTimeMillis())
@@ -104,12 +89,6 @@ class FakeAppSettingsDataStore : IAppSettingsDataStore {
         _topRanking.value = currentRanking
             .sortedWith(compareByDescending<ScoreEntry> { it.score }.thenByDescending { it.timestamp })
             .take(ScoreEntry.MAX_RANKING_ENTRIES)
-    }
-
-    override suspend fun saveBoardDimensions(width: Int, height: Int) {
-        delay(saveDelayMillis)
-        _selectedBoardWidth.value = width
-        _selectedBoardHeight.value = height
     }
 
     override suspend fun saveIsFirstTimeLaunch(isFirstTime: Boolean) {
