@@ -1,113 +1,95 @@
 package com.moxmose.moxspaceinvaders.ui.screens
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.content.Context
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import com.moxmose.moxspaceinvaders.model.GameBoard
-import com.moxmose.moxspaceinvaders.model.SoundEvent
-import com.moxmose.moxspaceinvaders.ui.IGameViewModel
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.unit.dp
+import androidx.navigation.testing.TestNavHostController
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.moxmose.moxspaceinvaders.R
+import com.moxmose.moxspaceinvaders.data.local.FakeAppSettingsDataStore
+import com.moxmose.moxspaceinvaders.ui.GameViewModel
+import com.moxmose.moxspaceinvaders.ui.SoundUtils
+import com.moxmose.moxspaceinvaders.ui.TimerViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
 @ExperimentalCoroutinesApi
+@RunWith(AndroidJUnit4::class)
 class GameScreenTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    // A fake ViewModel implementing the interface to control the state for tests
-    class FakeGameViewModel(
-        override val playerName: StateFlow<String> = MutableStateFlow("Test Player"),
-        initialBoard: GameBoard? = null,
-        initialIsBoardInitialized: State<Boolean> = mutableStateOf(false),
-        initialScore: State<Int> = mutableIntStateOf(0),
-        initialMoves: State<Int> = mutableIntStateOf(0),
-        override val currentTime: MutableStateFlow<Long> = MutableStateFlow(0L),
-        initialGamePaused: MutableState<Boolean> = mutableStateOf(false),
-        initialGameResetRequest: MutableState<Boolean> = mutableStateOf(false),
-        initialGameWon: MutableState<Boolean> = mutableStateOf(false),
-        override val selectedBackgrounds: MutableStateFlow<Set<String>> = MutableStateFlow(emptySet()),
-        override val gameCardImages: List<Int> = emptyList(),
-        override val playResetSound: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    ) : IGameViewModel {
+    private lateinit var testDispatcher: TestDispatcher
+    private lateinit var viewModel: GameViewModel
+    private lateinit var fakeDataStore: FakeAppSettingsDataStore
+    private lateinit var navController: TestNavHostController
+    private lateinit var soundUtils: SoundUtils
+    private lateinit var fakeTimerViewModel: TimerViewModel
 
-        override val tablePlay: GameBoard? = initialBoard
-        override val isBoardInitialized: State<Boolean> = initialIsBoardInitialized
-        override val score: State<Int> = initialScore
-        override val moves: State<Int> = initialMoves
-        override val gamePaused: MutableState<Boolean> = initialGamePaused
-        override val gameResetRequest: MutableState<Boolean> = initialGameResetRequest
-        override val gameWon: MutableState<Boolean> = initialGameWon
+    @Before
+    fun setup() {
+        testDispatcher = StandardTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
 
-        var requestPauseDialogCalled by mutableStateOf(false)
-            private set
-        var requestResetDialogCalled by mutableStateOf(false)
-            private set
+        fakeDataStore = FakeAppSettingsDataStore()
+        navController = TestNavHostController(ApplicationProvider.getApplicationContext())
+        fakeTimerViewModel = TimerViewModel()
+        soundUtils = SoundUtils(
+            context = ApplicationProvider.getApplicationContext(),
+            appSettingsDataStore = fakeDataStore,
+            externalScope = CoroutineScope(Dispatchers.IO)
+        )
+    }
 
-        private var lastMove: Pair<Int, Int>? = null
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
-        private fun checkWinCondition() {
-            val board = tablePlay ?: return
-            val allCoupled = board.cardsArray.all { row ->
-                row.all { cardState -> cardState.value?.coupled == true }
-            }
-            if (allCoupled) {
-                (gameWon as MutableState<Boolean>).value = true
-                (gamePaused as MutableState<Boolean>).value = true // To show the dialog
-            }
-        }
-
-        override fun checkGamePlayCardTurned(x: Int, y: Int, onSoundEvent: (SoundEvent) -> Unit) {
-            val board = tablePlay ?: return
-            val card = board.cardsArray[x][y].value ?: return
-            if (card.turned || card.coupled) return
-
-            board.cardsArray[x][y].value = card.copy(turned = true)
-            (moves as MutableState<Int>).value++
-
-            val lastClicked = lastMove
-            if (lastClicked == null) {
-                lastMove = x to y
-            } else {
-                val lastCard = board.cardsArray[lastClicked.first][lastClicked.second].value!!
-                if (lastCard.id == card.id) {
-                    (score as MutableState<Int>).value += 100
-                    board.cardsArray[x][y].value = card.copy(turned = true, coupled = true)
-                    board.cardsArray[lastClicked.first][lastClicked.second].value = lastCard.copy(turned = true, coupled = true)
-                    checkWinCondition()
-                } else {
-                    board.cardsArray[x][y].value = card.copy(turned = false)
-                    board.cardsArray[lastClicked.first][lastClicked.second].value = lastCard.copy(turned = false)
-                }
-                lastMove = null
-            }
-        }
-
-        override fun navigateToOpeningMenuAndCleanupDialogStates() {}
-        override fun requestPauseDialog() { requestPauseDialogCalled = true }
-        override fun requestResetDialog() { requestResetDialogCalled = true }
-        override fun dismissPauseDialog() {}
-        override fun cancelResetDialog() {}
-        override fun onResetSoundPlayed() {}
+    private fun createViewModel(): GameViewModel {
+        return GameViewModel(
+            navController = navController,
+            timerViewModel = fakeTimerViewModel,
+            appSettingsDataStore = fakeDataStore,
+            soundUtils = soundUtils,
+            ioDispatcher = testDispatcher
+        )
     }
 
     @Test
-    fun loadingIndicator_isDisplayed_beforeInitialization() = runTest {
-/*        val fakeViewModel = FakeGameViewModel(initialIsBoardInitialized = mutableStateOf(false))
-        composeTestRule.setContent {
-            GameScreen(innerPadding = PaddingValues(0.dp), gameViewModel = fakeViewModel)
-        }
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        composeTestRule.onNodeWithText(context.getString(R.string.game_loading_board)).assertIsDisplayed()
-        composeTestRule.onNodeWithTag("GameBoard").assertDoesNotExist()*/
-    }
+    fun gameScreen_displaysInitialState() = runTest {
+        // Arrange
+        viewModel = createViewModel()
+        composeTestRule.mainClock.autoAdvance = false
 
+        composeTestRule.setContent {
+            GameScreen(innerPadding = PaddingValues(0.dp), gameViewModel = viewModel)
+        }
+
+        // Act
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // Assert
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val scoreText = context.getString(R.string.game_head_score, 0)
+
+        composeTestRule.onNodeWithText(scoreText).assertIsDisplayed()
+        composeTestRule.onNodeWithText("x3").assertIsDisplayed() // Initial lives
+    }
 }

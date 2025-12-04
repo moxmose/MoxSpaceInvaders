@@ -1,18 +1,18 @@
 package com.moxmose.moxspaceinvaders.data.local
 
 import com.moxmose.moxspaceinvaders.model.ScoreEntry
-import com.moxmose.moxspaceinvaders.data.local.IAppSettingsDataStore
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class FakeAppSettingsDataStore : IAppSettingsDataStore {
     override val playerName = MutableStateFlow(IAppSettingsDataStore.DEFAULT_PLAYER_NAME)
+    override val playerShip = MutableStateFlow(IAppSettingsDataStore.DEFAULT_PLAYER_SHIP)
+    override val enemyShip = MutableStateFlow(IAppSettingsDataStore.DEFAULT_ENEMY_SHIP)
+    override val motherShip = MutableStateFlow(IAppSettingsDataStore.DEFAULT_MOTHER_SHIP)
     override val selectedBackgrounds = MutableStateFlow(IAppSettingsDataStore.DEFAULT_SELECTED_BACKGROUNDS)
-    override val selectedCards = MutableStateFlow(IAppSettingsDataStore.DEFAULT_SELECTED_CARDS)
     override val topRanking = MutableStateFlow<List<ScoreEntry>>(emptyList())
     override val lastPlayedEntry = MutableStateFlow<ScoreEntry?>(null)
     override val isDataLoaded = MutableStateFlow(true)
-    override val selectedBoardWidth = MutableStateFlow(IAppSettingsDataStore.DEFAULT_BOARD_WIDTH)
-    override val selectedBoardHeight = MutableStateFlow(IAppSettingsDataStore.DEFAULT_BOARD_HEIGHT)
     override val isFirstTimeLaunch = MutableStateFlow(false)
     override val selectedMusicTrackNames = MutableStateFlow(IAppSettingsDataStore.DEFAULT_MUSIC_TRACKS)
     override val isMusicEnabled = MutableStateFlow(IAppSettingsDataStore.DEFAULT_IS_MUSIC_ENABLED)
@@ -24,12 +24,20 @@ class FakeAppSettingsDataStore : IAppSettingsDataStore {
         playerName.value = name
     }
 
-    override suspend fun saveSelectedBackgrounds(backgrounds: Set<String>) {
-        selectedBackgrounds.value = backgrounds
+    override suspend fun savePlayerShip(ship: String) {
+        playerShip.value = ship
     }
 
-    override suspend fun saveSelectedCards(cards: Set<String>) {
-        selectedCards.value = cards
+    override suspend fun saveEnemyShip(ship: String) {
+        enemyShip.value = ship
+    }
+
+    override suspend fun saveMotherShip(ship: String) {
+        motherShip.value = ship
+    }
+
+    override suspend fun saveSelectedBackgrounds(backgrounds: Set<String>) {
+        selectedBackgrounds.value = backgrounds
     }
 
     override suspend fun saveScore(playerName: String, score: Int) {
@@ -37,11 +45,6 @@ class FakeAppSettingsDataStore : IAppSettingsDataStore {
         lastPlayedEntry.value = newEntry
         val updatedRanking = (topRanking.value + newEntry).sortedByDescending { it.score }.take(10)
         topRanking.value = updatedRanking
-    }
-
-    override suspend fun saveBoardDimensions(width: Int, height: Int) {
-        selectedBoardWidth.value = width
-        selectedBoardHeight.value = height
     }
 
     override suspend fun saveIsFirstTimeLaunch(isFirstTime: Boolean) {

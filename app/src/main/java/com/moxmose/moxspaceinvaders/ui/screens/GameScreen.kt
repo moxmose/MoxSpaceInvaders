@@ -53,6 +53,7 @@ import com.moxmose.moxspaceinvaders.R
 import com.moxmose.moxspaceinvaders.ui.GameEvent
 import com.moxmose.moxspaceinvaders.ui.GameStatus
 import com.moxmose.moxspaceinvaders.ui.GameViewModel
+import com.moxmose.moxspaceinvaders.ui.IGameViewModel
 import com.moxmose.moxspaceinvaders.ui.composables.BackgroundImg
 import com.moxmose.moxspaceinvaders.ui.formatDuration
 import org.koin.androidx.compose.koinViewModel
