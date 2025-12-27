@@ -5,7 +5,9 @@ Based on the skeleton of "Mox Memory Game" app.
 
 ## Screenshots
 
-*(Here you can add one or two screenshots of the app, like the main menu and the game screen.)*
+<img src="Screenshot_01.png" width="200" /> <img src="Screenshot_02.png" width="200" /> <img src="Screenshot_03.png" width="200" />
+<img src="Screenshot_04.png" width="200" /> <img src="Screenshot_05.png" width="200" /> <img src="Screenshot_06.png" width="200" />
+<img src="Screenshot_07.png" width="200" /> <img src="Screenshot_08.png" width="200" /> <img src="Screenshot_09.png" width="200" />
 
 ## Tech Stack & Key Features
 
